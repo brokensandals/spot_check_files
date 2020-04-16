@@ -49,12 +49,12 @@ def test_inspect_pathlike():
 
         for variant in [path, str(path)]:
             checker = Checker()
-            checker.inspect(variant)
+            checker.check(variant)
             _assert_sample_inspect((str(path),), checker)
 
 
 def test_inspect_filelike():
     data = BytesIO(_make_sample_zip())
     checker = Checker()
-    checker.inspect(data, ('foo.zip',))
+    checker.check(data, ('foo.zip',))
     _assert_sample_inspect(('foo.zip',), checker)

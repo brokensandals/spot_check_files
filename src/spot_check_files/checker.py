@@ -13,29 +13,34 @@ def _fs_extractor(path):
 
 class Checker:
     def __init__(self):
-        self.vpaths = []
         self.problems = {}
+        self.vpaths = []
 
-    def inspect(self, path_or_file, vpath=None):
+    def check(self, path_or_file, vpath=None):
         if isinstance(path_or_file, (str, bytes, PathLike)):
-            self._inspect((str(path_or_file),), _fs_extractor)
+            self._check((str(path_or_file),), _fs_extractor)
         elif not vpath:
             raise ValueError('vpath is required when inspecting a file-like')
         else:
-            self._inspect(vpath, lambda _: nullcontext(path_or_file))
+            self._check(vpath, lambda _: nullcontext(path_or_file))
 
-    def _inspect(self, vpath, extractor):
-        self.vpaths.append(vpath)
+    def _check(self, vpath, extractor):
         ic = self.inspector_class(vpath)
         if not ic:
+            self.visit(vpath, None)
             return
         with extractor(vpath[-1]) as file:
             with ic(file, vpath) as inspector:
-                problems = inspector.problems()
-                if problems:
-                    self.problems[vpath] = problems
+                self.visit(vpath, inspector)
                 for name in inspector.filenames():
-                    self._inspect(vpath + (name,), inspector.extract)
+                    self._check(vpath + (name,), inspector.extract)
+
+    def visit(self, vpath, inspector):
+        self.vpaths.append(vpath)
+        if inspector:
+            problems = inspector.problems()
+            if problems:
+                self.problems[vpath] = problems
 
     def inspector_class(self, vpath):
         if vpath[-1].endswith('.json'):
