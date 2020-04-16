@@ -1,4 +1,3 @@
-from io import IOBase
 import zipfile
 from spot_check_files.base import\
     BodyCallback, ChildCallback, FileInfo, Inspector
