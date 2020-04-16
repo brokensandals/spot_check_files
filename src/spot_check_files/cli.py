@@ -1,5 +1,17 @@
 import argparse
+import os
 from spot_check_files.checker import Checker
+
+
+def _print_images(checker):
+    try:
+        from imgcat import imgcat
+    except ImportError:
+        return
+
+    for (vpath, thumbnail) in checker.thumbnails:
+        print(f'thumbnail for {vpath}:')
+        imgcat(thumbnail)
 
 
 def main(args=None):
@@ -17,5 +29,8 @@ def main(args=None):
     for vpath in checker.problems:
         for problem in checker.problems[vpath]:
             print(f'WARNING {vpath}: {problem}')
+
+    if os.environ.get('TERM_PROGRAM', None) == 'iTerm.app':
+        _print_images(checker)
 
     return 0

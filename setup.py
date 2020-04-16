@@ -26,5 +26,8 @@ setuptools.setup(
     ],
     install_requires=[
     ],
+    extras_require={
+        'imgcat': ['imgcat'],
+    },
     python_requires='>=3.7',
 )
