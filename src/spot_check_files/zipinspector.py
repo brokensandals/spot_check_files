@@ -1,44 +1,37 @@
-from contextlib import contextmanager
+from io import IOBase
 import zipfile
+from spot_check_files.base import\
+    BodyCallback, ChildCallback, FileInfo, Inspector
 
 
-class ZipInspector:
-    def __init__(self, file, vpath=None):
-        if zipfile.is_zipfile(file):
-            self.zip = zipfile.ZipFile(file, 'r')
-        else:
-            self.zip = None
+class ZipInspector(Inspector):
+    def name(self):
+        return 'zip'
 
-    def __enter__(self):
-        return self
+    def inspect(self, info: FileInfo, get_data: BodyCallback, *,
+                on_child: ChildCallback = None,
+                thumbnail: bool = False):
+        with get_data() as data:
+            if not zipfile.is_zipfile(data):
+                info.problems.append('not a zipfile')
+                return
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self.close()
-        return False
+            info.mere_container = True
+            info.recognized = True
 
-    def close(self):
-        if self.zip:
-            self.zip.close()
+            with zipfile.ZipFile(data, 'r') as zf:
+                if zf.testzip():
+                    info.problems.append('zip contains at least one invalid entry')
+                for zi in zf.infolist():
+                    fi = FileInfo(
+                        pathseq=info.pathseq + (zi.filename,),
+                        size=zi.file_size)
 
-    def filenames(self):
-        if not self.zip:
-            return []
-        return [i.filename for i in self.zip.infolist() if not i.is_dir()]
+                    def extract():
+                        return zf.open(zi, 'r')
 
-    def problems(self):
-        if not self.zip:
-            return ['not a zipfile']
-        failed = self.zip.testzip()
-        if failed:
-            return [f'zip contains at least one invalid entry: {failed}']
-        return []
-
-    @contextmanager
-    def extract(self, filename):
-        if not self.zip:
-            raise KeyError(f'cannot extract {filename} from non-zipfile')
-        with self.zip.open(filename, 'r') as file:
-            yield file
-
-    def thumbnail(self):
-        return None
+                    try:
+                        if on_child:
+                            on_child(fi, extract)
+                    except zipfile.BadZipFile:
+                        fi.problems.append('corrupt in zip')

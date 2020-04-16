@@ -2,33 +2,30 @@ from pathlib import Path
 import shutil
 import subprocess
 from tempfile import TemporaryDirectory
+from spot_check_files.base import\
+    BodyCallback, ChildCallback, FileInfo, Inspector
 
 
-class QLInspector:
-    def __init__(self, file, vpath):
-        self.file = file
-        self.filename = Path(vpath[-1]).name
+class QLInspector(Inspector):
+    def name(self):
+        return 'quicklook'
 
-    def __enter__(self):
-        return self
+    def inspect(self, info: FileInfo, get_data: BodyCallback, *,
+                on_child: ChildCallback = None,
+                thumbnail: bool = False) -> None:
+        if not thumbnail:
+            return
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        return False
-
-    def filenames(self):
-        return []
-
-    def problems(self):
-        return []
-
-    def thumbnail(self):
-        with TemporaryDirectory() as tmpdir:
-            tmpdirpath = Path(tmpdir)
-            dest = tmpdirpath.joinpath(self.filename)
-            with dest.open('wb') as out:
-                shutil.copyfileobj(self.file, out)
-            subprocess.check_output(
-                ['qlmanage', '-t', '-s', '512', str(dest), '-o', tmpdir])
-            for path in tmpdirpath.glob('*.png'):
-                return path.read_bytes()
-            return None
+        with get_data() as data:
+            filename = Path(info.pathseq[-1]).name
+            with TemporaryDirectory() as tmpdir:
+                tmpdirpath = Path(tmpdir)
+                dest = tmpdirpath.joinpath(filename)
+                with dest.open('wb') as out:
+                    shutil.copyfileobj(data, out)
+                subprocess.check_output(
+                    ['qlmanage', '-t', '-s', '512', str(dest), '-o', tmpdir])
+                for path in tmpdirpath.glob('*.png'):
+                    info.thumbnail = path.read_bytes()
+                    info.recognized = True
+                    return

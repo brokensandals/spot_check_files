@@ -4,75 +4,56 @@ from pathlib import Path
 from os import PathLike
 import platform
 import random
+from spot_check_files.base import BodyCallback, FileInfo
 from spot_check_files.jsoninspector import JSONInspector
 from spot_check_files.qlinspector import QLInspector
 from spot_check_files.zipinspector import ZipInspector
 
 
-@contextmanager
-def _fs_extractor(path):
-    with open(path, 'rb') as file:
-        yield file
-
-
 class Checker:
     def __init__(self, *, num_thumbnails=3):
-        self.problems = {}
+        self.files = []
         self.num_thumbnails = num_thumbnails
-        self.thumbnails = []
-        self.vpaths = []
+        self.thumbnail_files = []
 
-    def check(self, path_or_file, vpath=None):
-        if isinstance(path_or_file, (str, bytes, PathLike)):
-            path = Path(path_or_file)
-            if path.is_file():
-                self._check((str(path_or_file),), _fs_extractor)
-            elif path.is_dir():
-                for filepath in path.glob('**/*'):
-                    if filepath.is_file():
-                        self._check((str(filepath),), _fs_extractor)
-            else:
-                raise ValueError(f'no file or folder at path: {path}')
-        elif not vpath:
-            raise ValueError('vpath is required when inspecting a file-like')
+    def check_path(self, path: PathLike):
+        path = Path(path)
+        if path.is_file():
+            size = path.stat().st_size
+            info = FileInfo(pathseq=(str(path),), size=size)
+            self.check(info, lambda: path.open('rb'))
+        elif path.is_dir():
+            for child in path.glob('**/*'):
+                if child.is_file():
+                    self.check_path(child)
         else:
-            self._check(vpath, lambda _: nullcontext(path_or_file))
+            raise ValueError(f'no file or folder at path: {path}')
 
-    def _check(self, vpath, extractor):
-        ic = self.inspector_class(vpath)
-        if not ic:
-            self.visit(vpath, None)
-            return
-        with extractor(vpath[-1]) as file:
-            with ic(file, vpath) as inspector:
-                self.visit(vpath, inspector)
-                for name in inspector.filenames():
-                    self._check(vpath + (name,), inspector.extract)
-
-    def visit(self, vpath, inspector):
-        self.vpaths.append(vpath)
+    def check(self, info: FileInfo, get_data: BodyCallback):
+        self.files.append(info)
+        inspector = self.inspector(info)
         if inspector:
-            problems = inspector.problems()
-            if problems:
-                self.problems[vpath] = problems
-
+            info.inspector = inspector
+            tnindex = 0
             if self.num_thumbnails:
-                if len(self.thumbnails) < self.num_thumbnails:
-                    thumbnail = inspector.thumbnail()
-                    if thumbnail:
-                        self.thumbnails.append((vpath, thumbnail))
+                if len(self.thumbnail_files) < self.num_thumbnails:
+                    tnindex = len(self.thumbnail_files)
                 else:
-                    i = random.randrange(0, len(self.vpaths))
-                    if i < self.num_thumbnails:
-                        thumbnail = inspector.thumbnail()
-                        if thumbnail:
-                            self.thumbnails[i] = (vpath, thumbnail)
+                    tnindex = random.randrange(0, len(self.files))
+            thumbnail = tnindex < self.num_thumbnails
+            inspector.inspect(info, get_data,
+                              thumbnail=thumbnail, on_child=self.check)
+            if thumbnail and info.thumbnail:
+                if len(self.thumbnail_files) < self.num_thumbnails:
+                    self.thumbnail_files.append(info)
+                else:
+                    self.thumbnail_files[tnindex] = info
 
-    def inspector_class(self, vpath):
-        if vpath[-1].endswith('.json'):
-            return JSONInspector
-        elif vpath[-1].endswith('.zip'):
-            return ZipInspector
-        elif platform.mac_ver()[0]:
-            return QLInspector
+    def inspector(self, info: FileInfo):
+        if info.pathseq[-1].lower().endswith('.zip'):
+            return ZipInspector()
+        if info.pathseq[-1].lower().endswith('.json'):
+            return JSONInspector()
+        if platform.mac_ver()[0]:
+            return QLInspector()
         return None

@@ -1,30 +1,24 @@
 import json
+from spot_check_files.base import\
+    BodyCallback, ChildCallback, FileInfo, Inspector
 
 
-class JSONInspector:
-    def __init__(self, file, vpath=None):
-        self.file = file
+def _discard(_):
+    return None
 
-    def __enter__(self):
-        return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        return False
+class JSONInspector(Inspector):
+    def name(self):
+        return 'json'
 
-    def filenames(self):
-        return []
+    def inspect(self, info: FileInfo, get_data: BodyCallback, *,
+                on_child: ChildCallback = None,
+                thumbnail: bool = False) -> None:
+        with get_data() as data:
+            try:
+                json.load(data, object_hook=_discard)
+                info.recognized = True
+            except json.JSONDecodeError:
+                info.problems.append('invalid json')
 
-    def problems(self):
-        def discard(dct):
-            return None
-
-        try:
-            json.load(self.file, object_hook=discard)
-        except json.JSONDecodeError:
-            return ['invalid json']
-
-        return []
-
-    def thumbnail(self):
-        # TODO
-        return None
+            # TODO: thumbnail

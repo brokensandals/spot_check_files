@@ -3,15 +3,15 @@ import os
 from spot_check_files.checker import Checker
 
 
-def _print_images(checker):
+def _print_images(fileinfos):
     try:
         from imgcat import imgcat
     except ImportError:
         return
 
-    for (vpath, thumbnail) in checker.thumbnails:
-        print(f'thumbnail for {vpath}:')
-        imgcat(thumbnail)
+    for file in fileinfos:
+        print(f'thumbnail for {file.pathseq}:')
+        imgcat(file.thumbnail)
         print()
 
 
@@ -28,15 +28,15 @@ def main(args=None):
 
     checker = Checker(num_thumbnails=args.thumbnails)
     for path in args.path:
-        checker.check(path)
+        checker.check_path(path)
 
-    print(f'Total files: {len(checker.vpaths)}')
-    for vpath in checker.problems:
-        for problem in checker.problems[vpath]:
-            print(f'WARNING {vpath}: {problem}')
+    print(f'Total files: {len(checker.files)}')
+    for file in checker.files:
+        for problem in file.problems:
+            print(f'WARNING {file.pathseq}: {problem}')
     print()
 
     if os.environ.get('TERM_PROGRAM', None) == 'iTerm.app':
-        _print_images(checker)
+        _print_images(checker.thumbnail_files)
 
     return 0

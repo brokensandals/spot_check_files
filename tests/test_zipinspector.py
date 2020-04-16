@@ -1,29 +1,28 @@
 from io import BytesIO
 import pytest
 import zipfile
+from spot_check_files.base import FileInfo
 from spot_check_files.zipinspector import ZipInspector
 
 
 def test_not_zip():
     data = BytesIO(bytes('garbage', 'utf-8'))
-    with ZipInspector(data) as inspector:
-        assert inspector.problems() == ['not a zipfile']
-        assert inspector.filenames() == []
-        with pytest.raises(KeyError):
-            with inspector.extract('foo') as file:
-                pass
+    info = FileInfo(pathseq=('test.zip',), size=100)
+    ZipInspector().inspect(info, lambda: data)
+    assert info.problems == ['not a zipfile']
+    assert not info.recognized
+    assert not info.mere_container
 
 
 def test_empty():
     data = BytesIO()
     with zipfile.ZipFile(data, 'w') as zf:
         pass
-    with ZipInspector(data) as inspector:
-        assert inspector.problems() == []
-        assert inspector.filenames() == []
-        with pytest.raises(KeyError):
-            with inspector.extract('foo') as file:
-                pass
+    info = FileInfo(pathseq=('test.zip',), size=100)
+    ZipInspector().inspect(info, lambda: data)
+    assert info.problems == []
+    assert info.recognized
+    assert info.mere_container
 
 
 def test_corrupt():
@@ -35,10 +34,26 @@ def test_corrupt():
     index = bytes(data.read()).find(bytes('work', 'utf-8'))
     data.seek(index)
     data.write(bytes('fail', 'utf-8'))
-    with ZipInspector(data) as inspector:
-        assert (inspector.problems()
-                == ['zip contains at least one invalid entry: bad.txt'])
-        assert inspector.filenames() == ['good.txt', 'bad.txt']
+
+    info = FileInfo(pathseq=('test.zip',), size=100)
+    children = []
+    children_data = []
+
+    def on_child(child_info, get_data):
+        children.append(child_info)
+        with get_data() as child_data:
+            children_data.append(str(child_data.read(), 'utf-8'))
+
+    ZipInspector().inspect(info, lambda: data, on_child=on_child)
+    assert info.problems == ['zip contains at least one invalid entry']
+    assert info.recognized
+    assert info.mere_container
+    assert children == [
+        FileInfo(pathseq=('test.zip', 'good.txt'), size=17),
+        FileInfo(pathseq=('test.zip', 'bad.txt'), size=15,
+                 problems=['corrupt in zip']),
+    ]
+    assert children_data == ['nice to meet you!']
 
 
 def test_valid():
@@ -46,13 +61,22 @@ def test_valid():
     with zipfile.ZipFile(data, 'w') as zf:
         zf.writestr('alpha/file1', 'hello')
         zf.writestr('beta/file2', 'goodbye')
-    with ZipInspector(data) as inspector:
-        assert inspector.problems() == []
-        assert inspector.filenames() == ['alpha/file1', 'beta/file2']
-        with inspector.extract('alpha/file1') as file:
-            assert str(file.read(), 'utf-8') == 'hello'
-        with inspector.extract('beta/file2') as file:
-            assert str(file.read(), 'utf-8') == 'goodbye'
-        with pytest.raises(KeyError):
-            with inspector.extract('foo') as file:
-                pass
+
+    info = FileInfo(pathseq=('test.zip',), size=100)
+    children = []
+    children_data = []
+
+    def on_child(child_info, get_data):
+        children.append(child_info)
+        with get_data() as child_data:
+            children_data.append(str(child_data.read(), 'utf-8'))
+
+    ZipInspector().inspect(info, lambda: data, on_child=on_child)
+    assert info.problems == []
+    assert info.recognized
+    assert info.mere_container
+    assert children == [
+        FileInfo(pathseq=('test.zip', 'alpha/file1'), size=5),
+        FileInfo(pathseq=('test.zip', 'beta/file2'), size=7),
+    ]
+    assert children_data == ['hello', 'goodbye']

@@ -24,41 +24,34 @@ def _make_sample_zip():
     return data.read()
 
 
-def _assert_sample_inspect(vpath, checker):
-    assert checker.vpaths == [
-        vpath,
-        vpath + ('folder/file1.json',),
-        vpath + ('folder/file2.txt',),
-        vpath + ('nested.zip',),
-        vpath + ('nested.zip', 'file3.xml'),
-        vpath + ('nested.zip', 'garbage.json'),
-        vpath + ('garbage.zip',),
+def _assert_sample_inspect(pathseq, checker):
+    assert len(checker.files) == 7
+
+    assert [i.pathseq for i in checker.files] == [
+        pathseq,
+        pathseq + ('folder/file1.json',),
+        pathseq + ('folder/file2.txt',),
+        pathseq + ('nested.zip',),
+        pathseq + ('nested.zip', 'file3.xml'),
+        pathseq + ('nested.zip', 'garbage.json'),
+        pathseq + ('garbage.zip',),
     ]
 
-    assert checker.problems == {
-        vpath + ('garbage.zip',): ['not a zipfile'],
-        vpath + ('nested.zip', 'garbage.json'): ['invalid json'],
+    assert {i.pathseq: i.problems for i in checker.files if i.problems} == {
+        pathseq + ('garbage.zip',): ['not a zipfile'],
+        pathseq + ('nested.zip', 'garbage.json'): ['invalid json'],
     }
 
-    assert ([t[0] for t in checker.thumbnails]
-            == [vpath + ('folder/file2.txt',),
-                vpath + ('nested.zip', 'file3.xml')])
+    assert ([i.pathseq for i in checker.thumbnail_files]
+            == [pathseq + ('folder/file2.txt',),
+                pathseq + ('nested.zip', 'file3.xml')])
 
 
-def test_inspect_pathlike():
+def test_check_path():
     with TemporaryDirectory() as tmpdir:
         tmpdir = Path(tmpdir)
         path = tmpdir.joinpath('sample.zip')
         path.write_bytes(_make_sample_zip())
-
-        for variant in [path, str(path)]:
-            checker = Checker(num_thumbnails=10)
-            checker.check(variant)
-            _assert_sample_inspect((str(path),), checker)
-
-
-def test_inspect_filelike():
-    data = BytesIO(_make_sample_zip())
-    checker = Checker(num_thumbnails=10)
-    checker.check(data, ('foo.zip',))
-    _assert_sample_inspect(('foo.zip',), checker)
+        checker = Checker(num_thumbnails=10)
+        checker.check_path(str(path))
+        _assert_sample_inspect((str(path),), checker)
