@@ -3,7 +3,7 @@ import zipfile
 
 
 class ZipInspector:
-    def __init__(self, file):
+    def __init__(self, file, vpath=None):
         if zipfile.is_zipfile(file):
             self.zip = zipfile.ZipFile(file, 'r')
         else:

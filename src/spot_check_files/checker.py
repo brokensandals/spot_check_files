@@ -30,7 +30,7 @@ class Checker:
         if not ic:
             return
         with extractor(vpath[-1]) as file:
-            with ic(file) as inspector:
+            with ic(file, vpath) as inspector:
                 problems = inspector.problems()
                 if problems:
                     self.problems[vpath] = problems

@@ -2,7 +2,7 @@ import json
 
 
 class JSONInspector:
-    def __init__(self, file):
+    def __init__(self, file, vpath=None):
         self.file = file
 
     def __enter__(self):
