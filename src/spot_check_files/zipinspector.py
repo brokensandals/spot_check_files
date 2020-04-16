@@ -39,3 +39,6 @@ class ZipInspector:
             raise KeyError(f'cannot extract {filename} from non-zipfile')
         with self.zip.open(filename, 'r') as file:
             yield file
+
+    def thumbnail(self):
+        return None

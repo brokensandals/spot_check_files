@@ -40,6 +40,10 @@ def _assert_sample_inspect(vpath, checker):
         vpath + ('nested.zip', 'garbage.json'): ['invalid json'],
     }
 
+    assert ([t[0] for t in checker.thumbnails]
+            == [vpath + ('folder/file2.txt',),
+                vpath + ('nested.zip', 'file3.xml')])
+
 
 def test_inspect_pathlike():
     with TemporaryDirectory() as tmpdir:
@@ -48,13 +52,13 @@ def test_inspect_pathlike():
         path.write_bytes(_make_sample_zip())
 
         for variant in [path, str(path)]:
-            checker = Checker()
+            checker = Checker(num_thumbnails=10)
             checker.check(variant)
             _assert_sample_inspect((str(path),), checker)
 
 
 def test_inspect_filelike():
     data = BytesIO(_make_sample_zip())
-    checker = Checker()
+    checker = Checker(num_thumbnails=10)
     checker.check(data, ('foo.zip',))
     _assert_sample_inspect(('foo.zip',), checker)

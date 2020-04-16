@@ -24,3 +24,7 @@ class JSONInspector:
             return ['invalid json']
 
         return []
+
+    def thumbnail(self):
+        # TODO
+        return None
