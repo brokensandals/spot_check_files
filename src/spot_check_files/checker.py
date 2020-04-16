@@ -1,5 +1,6 @@
 from contextlib import contextmanager
 from contextlib import nullcontext
+from pathlib import Path
 from os import PathLike
 import platform
 import random
@@ -23,7 +24,15 @@ class Checker:
 
     def check(self, path_or_file, vpath=None):
         if isinstance(path_or_file, (str, bytes, PathLike)):
-            self._check((str(path_or_file),), _fs_extractor)
+            path = Path(path_or_file)
+            if path.is_file():
+                self._check((str(path_or_file),), _fs_extractor)
+            elif path.is_dir():
+                for filepath in path.glob('**/*'):
+                    if filepath.is_file():
+                        self._check((str(filepath),), _fs_extractor)
+            else:
+                raise ValueError(f'no file or folder at path: {path}')
         elif not vpath:
             raise ValueError('vpath is required when inspecting a file-like')
         else:

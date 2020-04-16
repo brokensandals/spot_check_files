@@ -27,7 +27,7 @@ class QLInspector:
             dest = tmpdirpath.joinpath(self.filename)
             with dest.open('wb') as out:
                 shutil.copyfileobj(self.file, out)
-            subprocess.check_call(
+            subprocess.check_output(
                 ['qlmanage', '-t', '-s', '512', str(dest), '-o', tmpdir])
             for path in tmpdirpath.glob('*.png'):
                 return path.read_bytes()
