@@ -1,0 +1,10 @@
+usage: spot_check_files [-h] [-t THUMBNAILS] [-s] path [path ...]
+
+positional arguments:
+  path                  files or folders to check
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -t THUMBNAILS, --thumbnails THUMBNAILS
+                        maximum number of thumbnails to generate
+  -s, --streaming       avoid extracting files to disk when possible
