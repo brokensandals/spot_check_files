@@ -41,7 +41,6 @@ def main(args=None):
     for file in checker.files:
         for problem in file.problems:
             print(f'WARNING {file.pathseq}: {problem}')
-    print()
 
     if os.environ.get('TERM_PROGRAM', None) == 'iTerm.app':
         _print_images(checker.thumbnail_files)
