@@ -64,9 +64,6 @@ ChildCallback = Callable[[FileInfo, FileAccessor], None]
 
 
 class Inspector:
-    def name(self):
-        raise NotImplementedError()
-
     def inspect(self, info: FileInfo, accessor: FileAccessor, *,
                 on_child: ChildCallback = None,
                 thumbnail: bool = False) -> None:

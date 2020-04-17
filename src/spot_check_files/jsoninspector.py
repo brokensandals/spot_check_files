@@ -8,9 +8,6 @@ def _discard(_):
 
 
 class JSONInspector(Inspector):
-    def name(self):
-        return 'json'
-
     def inspect(self, info: FileInfo, accessor: FileAccessor, *,
                 on_child: ChildCallback = None,
                 thumbnail: bool = False) -> None:

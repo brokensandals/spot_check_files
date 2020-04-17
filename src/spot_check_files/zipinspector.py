@@ -7,9 +7,6 @@ from spot_check_files.base import\
 
 
 class ZipInspector(Inspector):
-    def name(self):
-        return 'zip'
-
     def _inspect_zipfile(self, info: FileInfo, zf: zipfile.ZipFile,
                          on_child: ChildCallback):
         raise NotImplementedError()

@@ -6,9 +6,6 @@ from spot_check_files.base import\
 
 
 class QLInspector(Inspector):
-    def name(self):
-        return 'quicklook'
-
     def inspect(self, info: FileInfo, accessor: FileAccessor, *,
                 on_child: ChildCallback = None,
                 thumbnail: bool = False) -> None:
