@@ -3,16 +3,67 @@
 This is a tool to help validate the integrity of data backups/exports.
 
 - Checks recognized file types for errors, e.g. invalid json.
-- Selects some files at random to show you samples of, e.g. an image of part of a PDF or HTML page.
+- Selects some files at random to show you thumbnails of.
 
 ## Usage
 
 Install:
 
 1. Install python3 and pip
-2. `pip3 install spot_check_files`
+2. `pip3 install spot_check_files[imgcat]`
+    - imgcat is optional and enables support for displaying thumbnails in iTerm2 on OS X
 
-Full command list and options can be seen in the [doc folder](doc/).
+Run:
+
+```bash
+spot_check_files PATH
+```
+
+This will output basic stats and any problems the tool detects in the given files/directories.
+If you're using iTerm2 on Mac, it will also show thumbnails of a few randomly-selected files.
+
+The full list of options can be seen in the [doc folder](doc/).
+
+This tool can also be used programmatically.
+The main entry point for the library is [spot_check_files.checker.Checker](src/spot_check_files/checker.py).
+
+## Supported file types
+
+File types are currently recognized only by file extension.
+
+<table>
+    <thead>
+        <tr>
+            <th>Type</th>
+            <th>Support</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>
+                <ul>
+                    <li><code>.tar</code></li>
+                    <li><code>.tar.bz2</code></li>
+                    <li><code>.tar.gz</code></li>
+                    <li><code>.tar.xz</code></li>
+                    <li><code>.tbz</code></li>
+                    <li><code>.tgz</code></li>
+                    <li><code>.txz</code></li>
+                    <li><code>.zip</code></li>
+                </ul>
+            </td>
+            <td>Recursively checks all the files in the archive (including other archives)</td>
+        </tr>
+        <tr>
+            <td><code>.json</code></td>
+            <td>Checks that the json can be parsed</td>
+        </tr>
+        <tr>
+            <td>all others</td>
+            <td>OS X ONLY: can generate thumbnails using Quick Look</td>
+        </tr>
+    </tbody>
+</table>
 
 ## Development
 

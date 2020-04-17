@@ -10,9 +10,9 @@ def _print_images(fileinfos):
         return
 
     for file in fileinfos:
+        print()
         print(f'thumbnail for {file.pathseq}:')
         imgcat(file.thumbnail)
-        print()
 
 
 def main(args=None):
