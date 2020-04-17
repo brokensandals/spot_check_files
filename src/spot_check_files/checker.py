@@ -5,7 +5,7 @@ import random
 from spot_check_files.base import FileAccessor, FileInfo, FSFileAccessor
 from spot_check_files.jsoninspector import JSONInspector
 from spot_check_files.qlinspector import QLInspector
-from spot_check_files.zipinspector import ZipInspector
+from spot_check_files.zipinspector import ExtractingZipInspector
 
 
 class Checker:
@@ -49,7 +49,7 @@ class Checker:
 
     def inspector(self, info: FileInfo):
         if info.pathseq[-1].lower().endswith('.zip'):
-            return ZipInspector()
+            return ExtractingZipInspector()
         if info.pathseq[-1].lower().endswith('.json'):
             return JSONInspector()
         if platform.mac_ver()[0]:

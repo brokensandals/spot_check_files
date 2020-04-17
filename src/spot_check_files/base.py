@@ -27,10 +27,14 @@ class FileAccessor:
     def io(self) -> ContextManager[IOBase]:
         raise NotImplementedError()
 
+    def agnostic(self) -> Union[ContextManager[Path], ContextManager[IOBase]]:
+        raise NotImplementedError()
+
 
 class FSFileAccessor(FileAccessor):
     def __init__(self, path: PathLike):
         self._path = Path(path)
+        self.agnostic = self.path
 
     def path(self) -> ContextManager[Path]:
         return nullcontext(self._path)
@@ -44,6 +48,7 @@ class IOFileAccessor(FileAccessor):
                  iofunc: Callable[[], ContextManager[IOBase]]):
         self.io = iofunc
         self.filename = Path(pathseq[-1]).name
+        self.agnostic = self.io
 
     @contextmanager
     def path(self):
