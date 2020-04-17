@@ -34,7 +34,7 @@ def test_thumbnail_not_requested():
     acc = IOFileAccessor(info.pathseq, lambda: data)
     QLInspector().inspect(info, acc)
     assert info.problems == []
-    assert not info.recognized
+    assert info.recognized
     assert info.thumbnail is None
 
 

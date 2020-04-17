@@ -19,7 +19,9 @@ def test_no_problems(capsys):
         Path(tmpdir).joinpath('ok.json').write_text('{"happy": true}')
         assert cli.main([tmpdir]) == 0
         cap = capsys.readouterr()
-        assert cap.out == 'Total files: 1\n'
+        assert 'Total files: 1\n' in cap.out
+        assert 'Recognized 100% of files, 100% by size\n' in cap.out
+        assert 'Made thumbnails of 0% of files, 0% by size\n' in cap.out
 
 
 def test_problems(capsys):
