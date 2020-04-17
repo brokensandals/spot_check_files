@@ -2,7 +2,7 @@ from pathlib import Path
 from os import PathLike
 import platform
 import random
-from spot_check_files.base import BodyCallback, FileInfo
+from spot_check_files.base import FileAccessor, FileInfo, FSFileAccessor
 from spot_check_files.jsoninspector import JSONInspector
 from spot_check_files.qlinspector import QLInspector
 from spot_check_files.zipinspector import ZipInspector
@@ -19,7 +19,7 @@ class Checker:
         if path.is_file():
             size = path.stat().st_size
             info = FileInfo(pathseq=(str(path),), size=size)
-            self.check(info, lambda: path.open('rb'))
+            self.check(info, FSFileAccessor(path))
         elif path.is_dir():
             for child in path.glob('**/*'):
                 if child.is_file():
@@ -27,7 +27,7 @@ class Checker:
         else:
             raise ValueError(f'no file or folder at path: {path}')
 
-    def check(self, info: FileInfo, get_data: BodyCallback):
+    def check(self, info: FileInfo, accessor: FileAccessor):
         self.files.append(info)
         inspector = self.inspector(info)
         if inspector:
@@ -39,7 +39,7 @@ class Checker:
                 else:
                     tnindex = random.randrange(0, len(self.files))
             thumbnail = tnindex < self.num_thumbnails
-            inspector.inspect(info, get_data,
+            inspector.inspect(info, accessor,
                               thumbnail=thumbnail, on_child=self.check)
             if thumbnail and info.thumbnail:
                 if len(self.thumbnail_files) < self.num_thumbnails:

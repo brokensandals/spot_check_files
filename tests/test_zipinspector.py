@@ -1,14 +1,14 @@
 from io import BytesIO
-import pytest
 import zipfile
-from spot_check_files.base import FileInfo
+from spot_check_files.base import FileInfo, IOFileAccessor
 from spot_check_files.zipinspector import ZipInspector
 
 
 def test_not_zip():
     data = BytesIO(bytes('garbage', 'utf-8'))
     info = FileInfo(pathseq=('test.zip',), size=100)
-    ZipInspector().inspect(info, lambda: data)
+    acc = IOFileAccessor(info.pathseq, lambda: data)
+    ZipInspector().inspect(info, acc)
     assert info.problems == ['not a zipfile']
     assert not info.recognized
     assert not info.mere_container
@@ -19,7 +19,8 @@ def test_empty():
     with zipfile.ZipFile(data, 'w') as zf:
         pass
     info = FileInfo(pathseq=('test.zip',), size=100)
-    ZipInspector().inspect(info, lambda: data)
+    acc = IOFileAccessor(info.pathseq, lambda: data)
+    ZipInspector().inspect(info, acc)
     assert info.problems == []
     assert info.recognized
     assert info.mere_container
@@ -39,12 +40,13 @@ def test_corrupt():
     children = []
     children_data = []
 
-    def on_child(child_info, get_data):
+    def on_child(child_info, child_acc):
         children.append(child_info)
-        with get_data() as child_data:
+        with child_acc.io() as child_data:
             children_data.append(str(child_data.read(), 'utf-8'))
 
-    ZipInspector().inspect(info, lambda: data, on_child=on_child)
+    acc = IOFileAccessor(info.pathseq, lambda: data)
+    ZipInspector().inspect(info, acc, on_child=on_child)
     assert info.problems == ['zip contains at least one invalid entry']
     assert info.recognized
     assert info.mere_container
@@ -66,12 +68,13 @@ def test_valid():
     children = []
     children_data = []
 
-    def on_child(child_info, get_data):
+    def on_child(child_info, child_acc):
         children.append(child_info)
-        with get_data() as child_data:
+        with child_acc.io() as child_data:
             children_data.append(str(child_data.read(), 'utf-8'))
 
-    ZipInspector().inspect(info, lambda: data, on_child=on_child)
+    acc = IOFileAccessor(info.pathseq, lambda: data)
+    ZipInspector().inspect(info, acc, on_child=on_child)
     assert info.problems == []
     assert info.recognized
     assert info.mere_container

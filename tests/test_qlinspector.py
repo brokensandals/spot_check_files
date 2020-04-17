@@ -1,6 +1,6 @@
 from io import BytesIO
 from pathlib import Path
-from spot_check_files.base import FileInfo
+from spot_check_files.base import FileInfo, IOFileAccessor
 from spot_check_files.qlinspector import QLInspector
 
 
@@ -16,7 +16,8 @@ _TEST_CSV = """x,x^2,x^3
 def test_supported():
     data = BytesIO(bytes(_TEST_CSV, 'utf-8'))
     info = FileInfo(pathseq=('bogus.zip', 'foo/bar.csv'), size=100)
-    QLInspector().inspect(info, lambda: data, thumbnail=True)
+    acc = IOFileAccessor(info.pathseq, lambda: data)
+    QLInspector().inspect(info, acc, thumbnail=True)
     assert info.problems == []
     assert info.recognized
     expected = Path('tests').joinpath(
@@ -30,7 +31,8 @@ def test_supported():
 def test_thumbnail_not_requested():
     data = BytesIO(bytes(_TEST_CSV, 'utf-8'))
     info = FileInfo(pathseq=('bogus.zip', 'foo/bar.csv'), size=100)
-    QLInspector().inspect(info, lambda: data)
+    acc = IOFileAccessor(info.pathseq, lambda: data)
+    QLInspector().inspect(info, acc)
     assert info.problems == []
     assert not info.recognized
     assert info.thumbnail is None
@@ -40,7 +42,8 @@ def test_unsupported():
     data = BytesIO(bytes(_TEST_CSV, 'utf-8'))
     # omit file extension so quicklook won't know what to do with it
     info = FileInfo(pathseq=('bogus.zip', 'foo/bar'), size=100)
-    QLInspector().inspect(info, lambda: data, thumbnail=True)
+    acc = IOFileAccessor(info.pathseq, lambda: data)
+    QLInspector().inspect(info, acc, thumbnail=True)
     assert info.problems == []
     assert not info.recognized
     assert info.thumbnail is None

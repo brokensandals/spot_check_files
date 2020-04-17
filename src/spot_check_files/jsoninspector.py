@@ -1,6 +1,6 @@
 import json
 from spot_check_files.base import\
-    BodyCallback, ChildCallback, FileInfo, Inspector
+    ChildCallback, FileAccessor, FileInfo, Inspector
 
 
 def _discard(_):
@@ -11,10 +11,10 @@ class JSONInspector(Inspector):
     def name(self):
         return 'json'
 
-    def inspect(self, info: FileInfo, get_data: BodyCallback, *,
+    def inspect(self, info: FileInfo, accessor: FileAccessor, *,
                 on_child: ChildCallback = None,
                 thumbnail: bool = False) -> None:
-        with get_data() as data:
+        with accessor.io() as data:
             try:
                 json.load(data, object_hook=_discard)
                 info.recognized = True
