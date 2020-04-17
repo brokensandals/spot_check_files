@@ -1,6 +1,6 @@
 import argparse
 import os
-from spot_check_files.checker import Checker
+from spot_check_files.checker import Checker, default_inspectors
 
 
 def _print_images(fileinfos):
@@ -21,12 +21,19 @@ def main(args=None):
         'path', nargs='+',
         help='files or folders to check')
     parser.add_argument(
-        '-t', '--thumbnails', nargs='?', type=int,
+        '-t', '--thumbnails', nargs=1, type=int,
         help='maximum number of thumbnails to generate')
-    parser.set_defaults(thumbnails=3)
+    parser.add_argument(
+        '-s', '--streaming', action='store_true',
+        help='avoid extracting files to disk when possible')
+    parser.set_defaults(thumbnails=[3], streaming=False)
     args = parser.parse_args(args)
 
-    checker = Checker(num_thumbnails=args.thumbnails)
+    inspectors = default_inspectors(streaming=args.streaming)
+    checker = Checker(
+        num_thumbnails=args.thumbnails[0],
+        inspectors=inspectors)
+
     for path in args.path:
         checker.check_path(path)
 

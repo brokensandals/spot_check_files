@@ -9,9 +9,12 @@ from tempfile import TemporaryDirectory
 from typing import Callable, ContextManager, List, Tuple, Union
 
 
+PathSeq = Tuple[str, ...]
+
+
 @dataclass
 class FileInfo:
-    pathseq: Tuple[str, ...]
+    pathseq: PathSeq
     size: int
     inspector: Inspector = None
     mere_container: bool = False
@@ -44,7 +47,7 @@ class FSFileAccessor(FileAccessor):
 
 
 class IOFileAccessor(FileAccessor):
-    def __init__(self, pathseq: Tuple[str, ...],
+    def __init__(self, pathseq: PathSeq,
                  iofunc: Callable[[], ContextManager[IOBase]]):
         self.io = iofunc
         self.filename = Path(pathseq[-1]).name

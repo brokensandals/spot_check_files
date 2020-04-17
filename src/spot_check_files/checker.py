@@ -2,17 +2,40 @@ from pathlib import Path
 from os import PathLike
 import platform
 import random
-from spot_check_files.base import FileAccessor, FileInfo, FSFileAccessor
+import re
+from typing import List, Pattern, Tuple
+from spot_check_files.base import FileAccessor, FileInfo, FSFileAccessor,\
+    Inspector
 from spot_check_files.jsoninspector import JSONInspector
 from spot_check_files.qlinspector import QLInspector
-from spot_check_files.zipinspector import ExtractingZipInspector
+from spot_check_files.zipinspector import ExtractingZipInspector,\
+    StreamingZipInspector
+
+
+def default_inspectors(streaming=False):
+    inspectors = []
+    inspectors.append((r'.*\.json\Z', JSONInspector()))
+    if streaming:
+        inspectors.append((r'.*\.zip\Z', StreamingZipInspector()))
+    else:
+        inspectors.append((r'.*\.zip\Z', ExtractingZipInspector()))
+    if platform.mac_ver()[0]:
+        inspectors.append((r'.*', QLInspector()))
+    return inspectors
 
 
 class Checker:
-    def __init__(self, *, num_thumbnails=3):
+    files: List[FileInfo]
+    num_thumbnails: int
+    thumbnail_files: List[FileInfo]
+    inspectors: List[Tuple[Pattern, Inspector]]
+
+    def __init__(self, *, num_thumbnails: int = 3,
+                 inspectors: List[Tuple[Pattern, Inspector]] = None):
         self.files = []
         self.num_thumbnails = num_thumbnails
         self.thumbnail_files = []
+        self.inspectors = inspectors or default_inspectors()
 
     def check_path(self, path: PathLike):
         path = Path(path)
@@ -48,10 +71,7 @@ class Checker:
                     self.thumbnail_files[tnindex] = info
 
     def inspector(self, info: FileInfo):
-        if info.pathseq[-1].lower().endswith('.zip'):
-            return ExtractingZipInspector()
-        if info.pathseq[-1].lower().endswith('.json'):
-            return JSONInspector()
-        if platform.mac_ver()[0]:
-            return QLInspector()
+        for (pattern, inspector) in self.inspectors:
+            if re.match(pattern, info.pathseq[-1], re.IGNORECASE):
+                return inspector
         return None
