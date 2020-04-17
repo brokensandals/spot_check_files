@@ -10,6 +10,7 @@ from spot_check_files.jsoninspector import JSONInspector
 from spot_check_files.qlinspector import QLInspector
 from spot_check_files.tarinspector import ExtractingTarInspector,\
     StreamingTarInspector
+from spot_check_files.xmlinspector import XMLInspector
 from spot_check_files.zipinspector import ExtractingZipInspector,\
     StreamingZipInspector
 
@@ -17,6 +18,7 @@ from spot_check_files.zipinspector import ExtractingZipInspector,\
 def default_inspectors(streaming=False):
     inspectors = []
     inspectors.append((r'.*\.json\Z', JSONInspector()))
+    inspectors.append((r'.*\.xml\Z', XMLInspector()))
     tar_regex = r'.*\.(tar\.(gz|bz2|xz)|tgz|tbz|txz)\Z'
     if streaming:
         inspectors.append((r'.*\.zip\Z', StreamingZipInspector()))

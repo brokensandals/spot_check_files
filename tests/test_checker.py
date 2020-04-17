@@ -25,6 +25,11 @@ def _make_sample_zip():
 
 
 def _assert_sample_inspect(pathseq, checker):
+    assert {i.pathseq: i.problems for i in checker.files if i.problems} == {
+        pathseq + ('garbage.zip',): ['not a zipfile'],
+        pathseq + ('nested.zip', 'garbage.json'): ['invalid json'],
+    }
+
     assert len(checker.files) == 7
 
     assert sorted([i.pathseq for i in checker.files]) == [
@@ -37,14 +42,8 @@ def _assert_sample_inspect(pathseq, checker):
         pathseq + ('nested.zip', 'garbage.json'),
     ]
 
-    assert {i.pathseq: i.problems for i in checker.files if i.problems} == {
-        pathseq + ('garbage.zip',): ['not a zipfile'],
-        pathseq + ('nested.zip', 'garbage.json'): ['invalid json'],
-    }
-
     assert (sorted([i.pathseq for i in checker.thumbnail_files])
-            == [pathseq + ('folder/file2.txt',),
-                pathseq + ('nested.zip', 'file3.xml')])
+            == [pathseq + ('folder/file2.txt',)])
 
 
 def test_check_path():
