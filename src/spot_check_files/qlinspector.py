@@ -6,9 +6,16 @@ from spot_check_files.base import\
 
 
 class QLInspector(Inspector):
+    thumbnails_only: bool
+
+    def __init__(self, thumbnails_only: bool = False):
+        self.thumbnails_only = thumbnails_only
+
     def inspect(self, info: FileInfo, accessor: FileAccessor, *,
                 on_child: ChildCallback = None,
                 thumbnail: bool = False) -> None:
+        if not thumbnail and self.thumbnails_only:
+            return
         with accessor.path() as path:
             with TemporaryDirectory() as tmpdir:
                 tmpdirpath = Path(tmpdir)

@@ -1,6 +1,8 @@
 import argparse
 import os
+import platform
 from spot_check_files.checker import Checker, default_inspectors
+from spot_check_files.qlinspector import QLInspector
 
 
 def _print_images(fileinfos):
@@ -35,10 +37,26 @@ def main(args=None):
     parser.add_argument(
         '-s', '--streaming', action='store_true',
         help='avoid extracting files to disk when possible')
+    parser.add_argument(
+        '-q', '--quicklook',
+        choices=['off', 'thumbnails', 'checks', 'auto'],
+        default='auto',
+        help='Whether to use OS X\'s Quick Look on files. '
+             'Quick Look can enable recognizing far more file types, but '
+             'invoking it is slow. '
+             '"off" means never use it. '
+             '"thumbnails" means only use it when generating a thumbnail.'
+             '"checks" means invoke it for all unrecognized files.'
+             '"auto" means "checks" on OS X, otherwise "off".'
+    )
     parser.set_defaults(thumbnails=[3], streaming=False)
     args = parser.parse_args(args)
 
     inspectors = default_inspectors(streaming=args.streaming)
+    if (args.quicklook == 'auto' and platform.mac_ver()[0])\
+       or args.quicklook != 'off':
+        inspectors.append((r'.*',
+                           QLInspector(args.quicklook == 'thumbnails')))
     checker = Checker(
         num_thumbnails=args.thumbnails[0],
         inspectors=inspectors)

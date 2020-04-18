@@ -1,4 +1,6 @@
-usage: spot_check_files [-h] [-t THUMBNAILS] [-s] path [path ...]
+usage: spot_check_files [-h] [-t THUMBNAILS] [-s]
+                            [-q {off,thumbnails,checks,auto}]
+                            path [path ...]
 
 positional arguments:
   path                  files or folders to check
@@ -8,3 +10,11 @@ optional arguments:
   -t THUMBNAILS, --thumbnails THUMBNAILS
                         maximum number of thumbnails to generate
   -s, --streaming       avoid extracting files to disk when possible
+  -q {off,thumbnails,checks,auto}, --quicklook {off,thumbnails,checks,auto}
+                        Whether to use OS X's Quick Look on files. Quick Look
+                        can enable recognizing far more file types, but
+                        invoking it is slow. "off" means never use it.
+                        "thumbnails" means only use it when generating a
+                        thumbnail."checks" means invoke it for all
+                        unrecognized files."auto" means "checks" on OS X,
+                        otherwise "off".

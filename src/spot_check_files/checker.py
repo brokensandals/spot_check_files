@@ -1,13 +1,11 @@
 from pathlib import Path
 from os import PathLike
-import platform
 import random
 import re
 from typing import List, Pattern, Tuple
 from spot_check_files.base import FileAccessor, FileInfo, FSFileAccessor,\
     Inspector
 from spot_check_files.jsoninspector import JSONInspector
-from spot_check_files.qlinspector import QLInspector
 from spot_check_files.tarinspector import ExtractingTarInspector,\
     StreamingTarInspector
 from spot_check_files.xmlinspector import XMLInspector
@@ -26,8 +24,6 @@ def default_inspectors(streaming=False):
     else:
         inspectors.append((r'.*\.zip\Z', ExtractingZipInspector()))
         inspectors.append((tar_regex, ExtractingTarInspector()))
-    if platform.mac_ver()[0]:
-        inspectors.append((r'.*', QLInspector()))
     return inspectors
 
 
