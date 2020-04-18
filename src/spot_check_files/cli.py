@@ -1,29 +1,8 @@
 import argparse
-import os
 import platform
 from spot_check_files.checker import Checker, default_inspectors
 from spot_check_files.qlinspector import QLInspector
-
-
-def _print_images(fileinfos):
-    try:
-        from imgcat import imgcat
-    except ImportError:
-        return
-
-    for file in fileinfos:
-        print()
-        print(f'thumbnail for {file.pathseq}:')
-        imgcat(file.thumbnail)
-
-
-def _total_size(fileinfos):
-    return sum(f.size for f in fileinfos)
-
-
-def _fractions(subset, fullset):
-    return (len(subset) / len(fullset),
-            _total_size(subset) / _total_size(fullset))
+from spot_check_files.report import Report
 
 
 def main(args=None):
@@ -64,25 +43,7 @@ def main(args=None):
     for path in args.path:
         checker.check_path(path)
 
-    fis = [f for f in checker.files if not f.mere_container]
-    rec_fis = [f for f in fis if f.recognized]
-    thumb_fis = checker.thumbnail_files
-    rec_fracs = _fractions(rec_fis, fis)
-    thumb_fracs = _fractions(thumb_fis, fis)
-
-    print(f'Archives: {sum(1 for f in checker.files if f.mere_container)}')
-    print(f'Total non-archive files: {len(checker.files)}')
-    print('Recognized {:.0%} of files, {:.0%} by size'
-          .format(rec_fracs[0], rec_fracs[1]))
-    print('Made thumbnails of {:.0%} of files, {:.0%} by size'
-          .format(thumb_fracs[0], thumb_fracs[1]))
-
-
-    for file in checker.files:
-        for problem in file.problems:
-            print(f'WARNING {file.pathseq}: {problem}')
-
-    if os.environ.get('TERM_PROGRAM', None) == 'iTerm.app':
-        _print_images(checker.thumbnail_files)
+    report = Report(checker.files, checker.thumbnail_files)
+    report.print()
 
     return 0

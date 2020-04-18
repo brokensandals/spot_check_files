@@ -25,6 +25,7 @@ setuptools.setup(
         "Operating System :: MacOS :: MacOS X",
     ],
     install_requires=[
+        'Jinja2',
     ],
     extras_require={
         'imgcat': ['imgcat'],
