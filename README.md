@@ -59,8 +59,12 @@ File types are currently recognized only by file extension.
             <td>Checks that the json can be parsed</td>
         </tr>
         <tr>
-            <td>all others</td>
-            <td>OS X ONLY: can generate thumbnails using Quick Look</td>
+            <td><code>.xml</code></td>
+            <td>Checks that the xml can be parsed</td>
+        </tr>
+        <tr>
+            <td>anything supported by OS X Quick Look (HTML, Office docs, ...)</td>
+            <td>OS X ONLY: generates thumbnails using Quick Look. This greatly increases the number of supported file types. However, it's slow. See the <code>-q</code> command line option if you wish to partially or fully disable it.</td>
         </tr>
     </tbody>
 </table>
