@@ -70,7 +70,8 @@ def main(args=None):
     rec_fracs = _fractions(rec_fis, fis)
     thumb_fracs = _fractions(thumb_fis, fis)
 
-    print(f'Total files: {len(checker.files)}')
+    print(f'Archives: {sum(1 for f in checker.files if f.mere_container)}')
+    print(f'Total non-archive files: {len(checker.files)}')
     print('Recognized {:.0%} of files, {:.0%} by size'
           .format(rec_fracs[0], rec_fracs[1]))
     print('Made thumbnails of {:.0%} of files, {:.0%} by size'
