@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>spot_check_files report</title>
+        <style>
+            html {
+                overflow: auto;
+                display: flex;
+                justify-content: center;
+            }
+            body {
+                max-width: 600px;
+            }
+            table {
+                margin-bottom: 2em;
+                margin-left: auto;
+                margin-right: auto;
+                border: 1px solid black;
+                border-radius: 3px;
+                padding: 10px;
+            }
+            td, th {
+                padding: 5px;
+                vertical-align: top;
+            }
+            .file-stats td {
+                text-align: right;
+            }
+            .file-stats td:first-child {
+                text-align: left;
+            }
+            .thumbnails img {
+                width: 500px;
+            }
+        </style>
+    </head>
+    <body>
+        <table class="file-stats">
+            <thead>
+                <tr>
+                    <th></th>
+                    <th>[Count]</th>
+                    <th>[Size]</th>
+                    <th>[% Files]</th>
+                    <th>[% Size]</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Archives</td>
+                    <td>{{ count_arch }}</td>
+                    <td>{{ size_arch }}</td>
+                </tr>
+                <tr>
+                    <td>Leaf files</td>
+                    <td>{{ count_nonarch }}</td>
+                    <td>{{ size_nonarch }}</td>
+                </tr>
+                <tr>
+                    <td>Recognized</td>
+                    <td>{{ count_rec }}</td>
+                    <td>{{ size_rec }}</td>
+                    <td>{{ "{:.0%}".format(frac_rec) }}</td>
+                    <td>{{ "{:.0%}".format(frac_size_rec) }}</td>
+                </tr>
+                <tr>
+                    <td>Made thumbnails</td>
+                    <td>{{ count_thumb }}</td>
+                    <td>{{ size_thumb }}</td>
+                    <td>{{ "{:.0%}".format(frac_thumb) }}</td>
+                    <td>{{ "{:.0%}".format(frac_size_thumb) }}</td>
+                </tr>
+            </tbody>
+        </table>
+        <table class="problems">
+            <thead>
+                <tr>
+                    <th>Path</th>
+                    <th>Problem</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for file in files %}
+                    {% for problem in file.problems %}
+                        <tr>
+                            <td>{{ file.pathseq }}</td>
+                            <td>{{ problem }}</td>
+                        </tr>
+                    {% endfor %}
+                {% endfor %}
+            </tbody>
+        </table>
+        <table class="thumbnails">
+            <thead>
+                <tr>
+                    <th>Path</th>
+                    <th>Thumbnail</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for file in thumbnails %}
+                    <tr>
+                        <td>{{ file.pathseq }}</td>
+                        <td><img src="data:image/png;base64,{{ b64encode(file.thumbnail).decode('utf-8') }}"></td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </body>
+</html>

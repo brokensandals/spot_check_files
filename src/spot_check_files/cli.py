@@ -11,6 +11,9 @@ def main(args=None):
         'path', nargs='+',
         help='files or folders to check')
     parser.add_argument(
+        '-H', '--html', action='store_true', default=False,
+        help='output html')
+    parser.add_argument(
         '-t', '--thumbnails', nargs=1, type=int,
         help='maximum number of thumbnails to generate')
     parser.add_argument(
@@ -26,8 +29,7 @@ def main(args=None):
              '"off" means never use it. '
              '"thumbnails" means only use it when generating a thumbnail.'
              '"checks" means invoke it for all unrecognized files.'
-             '"auto" means "checks" on OS X, otherwise "off".'
-    )
+             '"auto" means "checks" on OS X, otherwise "off".')
     parser.set_defaults(thumbnails=[3], streaming=False)
     args = parser.parse_args(args)
 
@@ -44,6 +46,9 @@ def main(args=None):
         checker.check_path(path)
 
     report = Report(checker.files, checker.thumbnail_files)
-    report.print()
+    if args.html:
+        print(report.html())
+    else:
+        report.print()
 
     return 0
