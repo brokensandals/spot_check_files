@@ -20,11 +20,6 @@ def _print_images(fileinfos):
         imgcat(file.thumbnail)
 
 
-def _fractions(subset, fullset):
-    return (len(subset) / len(fullset),
-            _total_size(subset) / _total_size(fullset))
-
-
 class Report:
     def __init__(self, files: List[FileInfo],
                  thumbnails: List[FileInfo]):
@@ -42,6 +37,13 @@ class Report:
         self.frac_rec = self.count_rec / self.count_nonarch
         self.size_rec = sum(f.size for f in rec)
         self.frac_size_rec = self.size_rec / self.size_nonarch
+        # TODO: will give messed up stats if f.problems and f.mere_container
+        #       really, those should be mutually exclusive
+        prob = [f for f in files if f.problems]
+        self.count_prob = len(prob)
+        self.frac_prob = self.count_prob / self.count_nonarch
+        self.size_prob = sum(f.size for f in prob)
+        self.frac_size_prob = self.size_prob / self.size_nonarch
         self.count_thumb = len(thumbnails)
         self.frac_thumb = self.count_thumb / self.count_nonarch
         self.size_thumb = sum(f.size for f in thumbnails)
