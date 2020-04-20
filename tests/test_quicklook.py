@@ -32,5 +32,24 @@ def test_supported():
         assert res2.identified
         assert res2.extracted is None
         assert res2.errors == []
+        # I have no idea whether the Quick Look thumbnails are identical
+        # across MacOS installations, let alone across different versions
+        # of the OS, so this test may be extremely brittle
         expected = Path('tests').joinpath('quicklook.png').read_bytes()
         assert res2.png == expected
+
+
+def test_unsupported():
+    with TemporaryDirectory() as tmpdir:
+        tmpdir = Path(tmpdir)
+        req = CheckRequest(
+            tmpdir=tmpdir,
+            # omit file extension so QuickLook won't know what to do with it
+            path=tmpdir.joinpath('text')
+        )
+        req.path.write_text(_TEST_CSV)
+        res = QLChecker().check(req)
+        assert not res.identified
+        assert res.extracted is None
+        assert res.errors == ['no png produced by qlmanage']
+        assert res.png is None
