@@ -1,6 +1,5 @@
 from pathlib import Path
 import tarfile
-from tarfile import TarFile
 import tempfile
 import zipfile
 from zipfile import ZipFile
@@ -11,13 +10,13 @@ class ZipChecker(Checker):
     def check(self, req: CheckRequest) -> CheckResult:
         result = CheckResult()
 
-        if not zipfile.is_zipfile(req.path):
-            result.errors.append('not a zipfile')
-            return result
-
-        result.identified = True
-
         try:
+            if not zipfile.is_zipfile(req.path):
+                result.errors.append('not a zipfile')
+                return result
+
+            result.identified = True
+
             with ZipFile(req.path, 'r') as zf:
                 result.extracted = Path(tempfile.mkdtemp(dir=req.tmpdir))
                 zf.extractall(result.extracted)
@@ -31,14 +30,14 @@ class TarChecker(Checker):
     def check(self, req: CheckRequest) -> CheckResult:
         result = CheckResult()
 
-        if not tarfile.is_tarfile(req.path):
-            result.errors.append('not a tarfile')
-            return result
-
-        result.identified = True
-
         try:
-            with TarFile(req.path, 'r') as tf:
+            if not tarfile.is_tarfile(req.path):
+                result.errors.append('not a tarfile')
+                return result
+
+            result.identified = True
+
+            with tarfile.open(req.path, 'r') as tf:
                 result.extracted = Path(tempfile.mkdtemp(dir=req.tmpdir))
                 tf.extractall(result.extracted)
         except Exception as e:
