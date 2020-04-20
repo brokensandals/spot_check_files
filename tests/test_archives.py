@@ -132,7 +132,7 @@ def test_valid_tarfile():
             assert path2.read_text() == 'goodbye' * 10
             assert res.errors == []
 
-            req.path.rename(Path('test.tar'))
+            req.path.unlink()
 
         test_compression('')
         test_compression('gz')
