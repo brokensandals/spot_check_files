@@ -1,7 +1,36 @@
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from spot_check_files.basics import PlaintextChecker
+from spot_check_files.basics import CSVChecker, PlaintextChecker
 from spot_check_files.checker import CheckRequest
+
+
+_TEST_CSV = """x,x^2,x cubed in words,x^3
+1,1,one,1
+2,4,eight,8
+3,9,twenty-seven,27
+4,16,sixteen,64
+5,25,one hundred and twenty-five,125
+"""
+
+
+def test_csv_valid():
+    with TemporaryDirectory() as td:
+        td = Path(td)
+        req = CheckRequest(
+            realpath=td.joinpath('test.csv'),
+            tmpdir=td,
+            virtpath=Path('irrelevant'))
+        req.realpath.write_text(_TEST_CSV)
+        res = CSVChecker().check(req)
+        assert isinstance(res.recognizer, CSVChecker)
+        assert res.errors == []
+        assert res.png is None
+
+        req.png = True
+        res = CSVChecker().check(req)
+        assert res.errors == []
+        expected = Path('tests').joinpath('csv.png').read_bytes()
+        assert res.png == expected
 
 
 def test_plaintext_valid():
