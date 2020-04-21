@@ -108,3 +108,5 @@ Bug reports and pull requests are welcome on GitHub at https://github.com/broken
 ## License
 
 This is available as open source under the terms of the [MIT License](https://opensource.org/licenses/MIT).
+
+This package includes and uses a copy of the [Monoid](https://github.com/larsenwork/monoid) font, which is also MIT-licensed.

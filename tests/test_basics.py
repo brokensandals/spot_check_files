@@ -17,6 +17,14 @@ def test_plaintext_valid():
         assert res.errors == []
         assert res.png is None
 
+        req.png = True
+        res = PlaintextChecker().check(req)
+        assert res.errors == []
+        # The font I'm currently using doesn't handle emoji but I don't
+        # really care right now
+        expected = Path('tests').joinpath('plaintext.png').read_bytes()
+        assert res.png == expected
+
 
 def test_plaintext_encoding_error():
     with TemporaryDirectory() as td:
