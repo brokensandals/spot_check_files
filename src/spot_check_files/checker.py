@@ -1,6 +1,8 @@
 from __future__ import annotations
 from dataclasses import dataclass, field
 from pathlib import Path
+import platform
+from tempfile import TemporaryDirectory
 from typing import List, Union
 
 
@@ -50,3 +52,83 @@ class Checker:
         checker itself is unable to operate on valid files can be propagated.
         """
         raise NotImplementedError()
+
+
+@dataclass
+class FileSummary:
+    """Records metadata about a file, and the result of checking it.
+
+    Attributes:
+        result - result from the first checker that recognized the file,
+                 or an empty result
+        size - size in bytes of the file
+        virtpath - the logical path to the file (for files inside an archive,
+                   this wil include the path to the archive)
+    """
+    size: int
+    virtpath: Path
+    result: CheckResult = field(default_factory=CheckResult)
+
+
+class CheckerRunner:
+    """This is the main entry point for spot-checking files.
+
+    What types of files will be checked, and how they will be recognized,
+    is determined by the checkers attribute. The CheckerRunner.default()
+    method will create an instance with a default set of checkers.
+
+    The check_path method should be called for each file or directory you
+    wish to check.
+
+    Attributes:
+        checkers - for each file, these will be applied in order until
+                    one recognizes the file
+    """
+    @classmethod
+    def default(cls):
+        """Returns an instance with hopefully-reasonable defaults.
+
+        Default checkers, in order:
+            1. FileNameChecker.default()
+            2. If on a Mac, QlChecker
+        """
+        from spot_check_files.filenames import FileNameChecker
+        checkers = [FileNameChecker.default()]
+        if platform.mac_ver()[0]:
+            from spot_check_files.quicklook import QLChecker
+            checkers.append(QLChecker())
+        return cls(checkers)
+
+    def __init__(self, checkers: List[Checker] = []):
+        self.checkers = list(checkers)
+
+    def check_path(self, path: Path, virtpath: Path = None,
+                   tmpdir: Path = None) -> List[FileSummary]:
+        """Runs checks against the file or directory at the given path."""
+        if not tmpdir:
+            with TemporaryDirectory() as tmpdir:
+                return self.check_path(path, virtpath, Path(tmpdir))
+        results = []
+        virtpath = virtpath or path
+        if path.is_dir():
+            for fpath in path.glob('**/*'):
+                if fpath.is_file():
+                    fvirtpath = virtpath.joinpath(fpath.relative_to(path))
+                    results.extend(self.check_path(fpath, fvirtpath, tmpdir))
+            return results
+        elif path.is_file():
+            summary = FileSummary(
+                virtpath=virtpath,
+                size=path.stat().st_size)
+            results.append(summary)
+            for checker in self.checkers:
+                req = CheckRequest(
+                    realpath=path, tmpdir=tmpdir, virtpath=virtpath)
+                res = checker.check(req)
+                if res.recognizer:
+                    summary.result = res
+                    if res.extracted:
+                        results.extend(
+                            self.check_path(res.extracted, virtpath, tmpdir))
+                    break
+        return results
