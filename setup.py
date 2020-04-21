@@ -27,6 +27,7 @@ setuptools.setup(
     install_requires=[
         'Jinja2',
         'Pillow',
+        'terminaltables',
     ],
     extras_require={
         'imgcat': ['imgcat'],

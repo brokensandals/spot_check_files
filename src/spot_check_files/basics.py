@@ -57,6 +57,9 @@ def text_thumb(text: str) -> bytes:
 
 
 class CSVChecker(Checker):
+    def __str__(self):
+        return 'CSVChecker'
+
     """Checks a CSV or TSV file for problems.
 
     Python's csv.Sniffer is used to try to determine the column delimiter;

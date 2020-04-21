@@ -123,7 +123,7 @@ class CheckerRunner:
             results.append(summary)
             for checker in self.checkers:
                 req = CheckRequest(
-                    realpath=path, tmpdir=tmpdir, virtpath=virtpath)
+                    realpath=path, tmpdir=tmpdir, virtpath=virtpath, png=True)
                 res = checker.check(req)
                 if res.recognizer:
                     summary.result = res
