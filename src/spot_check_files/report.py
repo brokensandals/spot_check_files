@@ -1,19 +1,29 @@
 import os
+from PIL import Image
 from terminaltables import SingleTable
 from typing import List
 from spot_check_files.checker import FileSummary
 
 
-def _print_pngs(summaries):
+def _print_thumbs(summaries):
     try:
         from imgcat import imgcat
     except ImportError:
         return
 
-    summaries = list(summaries)
-
-    for summary in summaries:
-        imgcat(summary.result.thumb)
+    while summaries:
+        # Combine images to show three per line in the output
+        group = [s.result.thumb for s in summaries[0:3]]
+        boxes = [i.getbbox() for i in group]
+        width = sum(b[2] - b[0] + 1 for b in boxes)
+        height = max(b[3] - b[1] + 1 for b in boxes)
+        img = Image.new('RGBA', (width, height))
+        x = 0
+        for i in range(len(group)):
+            img.paste(group[i], (x, 0))
+            x += boxes[i][2] - boxes[i][0] + 1
+        imgcat(img)
+        summaries = summaries[3:]
 
 
 class _GroupStats:
@@ -63,7 +73,7 @@ class CheckReport:
 
     def print(self):
         if os.environ.get('TERM_PROGRAM', None) == 'iTerm.app':
-            _print_pngs(self.png_summaries)
+            _print_thumbs(self.png_summaries)
 
         for summary in self.err_summaries:
             print(f'WARNINGS for {summary.virtpath}')
