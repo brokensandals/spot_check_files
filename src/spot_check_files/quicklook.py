@@ -24,7 +24,7 @@ class QLChecker(Checker):
         outdir = tempfile.mkdtemp(dir=req.tmpdir)
         subprocess.check_output(
             ['qlmanage', '-t', '-s', '300',
-             str(req.path), '-o', outdir])
+             str(req.realpath), '-o', outdir])
 
         paths = list(Path(outdir).glob('*.png'))
         if paths:

@@ -9,12 +9,16 @@ class CheckRequest:
     """Represents a file that should be checked.
 
     Attributes:
-        path - path to the file to check
+        realpath - path to (possibly temporary) location of file
         tmpdir - a shared temporary directory
+        virtpath - logical path associated with the file. For example,
+                   if the file "foo/bar.txt" was extracted from "a.zip",
+                   this might be "a.zip/foo/bar.txt".
         png - if True, a png thumbnail should be generated
     """
-    path: Path
+    realpath: Path
     tmpdir: Path
+    virtpath: Path
     png: bool = False
 
 

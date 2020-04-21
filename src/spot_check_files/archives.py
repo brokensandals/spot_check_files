@@ -15,13 +15,13 @@ class ZipChecker(Checker):
         result = CheckResult()
 
         try:
-            if not zipfile.is_zipfile(req.path):
+            if not zipfile.is_zipfile(req.realpath):
                 result.errors.append('not a zipfile')
                 return result
 
             result.recognizer = self
 
-            with ZipFile(req.path, 'r') as zf:
+            with ZipFile(req.realpath, 'r') as zf:
                 result.extracted = Path(tempfile.mkdtemp(dir=req.tmpdir))
                 zf.extractall(result.extracted)
         except Exception as e:
@@ -43,13 +43,13 @@ class TarChecker(Checker):
         result = CheckResult()
 
         try:
-            if not tarfile.is_tarfile(req.path):
+            if not tarfile.is_tarfile(req.realpath):
                 result.errors.append('not a tarfile')
                 return result
 
             result.recognizer = self
 
-            with tarfile.open(req.path, 'r') as tf:
+            with tarfile.open(req.realpath, 'r') as tf:
                 result.extracted = Path(tempfile.mkdtemp(dir=req.tmpdir))
                 tf.extractall(result.extracted)
         except Exception as e:

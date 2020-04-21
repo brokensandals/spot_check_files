@@ -9,8 +9,11 @@ from spot_check_files.filenames import FileNameChecker
 def test_no_match():
     with TemporaryDirectory() as tmpdir:
         tmpdir = Path(tmpdir)
-        req = CheckRequest(tmpdir=tmpdir, path=tmpdir.joinpath('test.foo'))
-        req.path.write_text('whatevs')
+        req = CheckRequest(
+            tmpdir=tmpdir,
+            realpath=tmpdir.joinpath('test'),
+            virtpath='test.foo')
+        req.realpath.write_text('whatevs')
         res = FileNameChecker.default().check(req)
         assert res.recognizer is None
         assert res.errors == []
@@ -19,8 +22,11 @@ def test_no_match():
 def test_failed_match():
     with TemporaryDirectory() as tmpdir:
         tmpdir = Path(tmpdir)
-        req = CheckRequest(tmpdir=tmpdir, path=tmpdir.joinpath('test.zip'))
-        req.path.write_text('whatevs')
+        req = CheckRequest(
+            tmpdir=tmpdir,
+            realpath=tmpdir.joinpath('test'),
+            virtpath='test.zip')
+        req.realpath.write_text('whatevs')
         checker = FileNameChecker.default()
         res = checker.check(req)
         assert res.recognizer == checker
@@ -34,8 +40,11 @@ def test_failed_match():
 def test_match():
     with TemporaryDirectory() as tmpdir:
         tmpdir = Path(tmpdir)
-        req = CheckRequest(tmpdir=tmpdir, path=tmpdir.joinpath('test.zip'))
-        with ZipFile(req.path, 'w') as zf:
+        req = CheckRequest(
+            tmpdir=tmpdir,
+            realpath=tmpdir.joinpath('test'),
+            virtpath='test.zip')
+        with ZipFile(req.realpath, 'w') as zf:
             pass
         res = FileNameChecker.default().check(req)
         assert isinstance(res.recognizer, ZipChecker)

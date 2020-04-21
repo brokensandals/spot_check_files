@@ -6,10 +6,12 @@ from spot_check_files.checker import Checker, CheckResult, CheckRequest
 
 
 class FileNameChecker(Checker):
-    """Selects and runs a Checker based on a file's path.
+    """Selects and runs a Checker based on a file's (logical) path.
 
     If the Checker matching the filename does not recognize the file,
     this Checker will mark itself as the recognizer and add an error.
+
+    The virtpath attribute of the CheckRequest is used.
 
     Attributes:
         checkers - list of tuples mapping filename pattern
@@ -37,7 +39,7 @@ class FileNameChecker(Checker):
 
     def check(self, req: CheckRequest) -> CheckResult:
         for (pattern, checker) in self.checkers:
-            if fnmatch.fnmatch(str(req.path), pattern):
+            if fnmatch.fnmatch(str(req.virtpath), pattern):
                 result = checker.check(req)
                 if result.recognizer is None:
                     result.recognizer = self

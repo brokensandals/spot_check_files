@@ -9,8 +9,11 @@ from spot_check_files.checker import CheckRequest
 def test_not_zip():
     with TemporaryDirectory() as tmpdir:
         tmpdir = Path(tmpdir)
-        req = CheckRequest(tmpdir=tmpdir, path=tmpdir.joinpath('test.zip'))
-        req.path.write_text('garbage')
+        req = CheckRequest(
+            realpath=tmpdir.joinpath('test.zip'),
+            tmpdir=tmpdir,
+            virtpath='irrelevant')
+        req.realpath.write_text('garbage')
         res = ZipChecker().check(req)
         assert res.recognizer is None
         assert res.extracted is None
@@ -20,8 +23,11 @@ def test_not_zip():
 def test_empty_zip():
     with TemporaryDirectory() as tmpdir:
         tmpdir = Path(tmpdir)
-        req = CheckRequest(tmpdir=tmpdir, path=tmpdir.joinpath('test.zip'))
-        with ZipFile(req.path, 'w') as zf:
+        req = CheckRequest(
+            realpath=tmpdir.joinpath('test.zip'),
+            tmpdir=tmpdir,
+            virtpath='irrelevant')
+        with ZipFile(req.realpath, 'w') as zf:
             pass
         res = ZipChecker().check(req)
         assert res.recognizer
@@ -33,13 +39,16 @@ def test_empty_zip():
 def test_corrupt_zip():
     with TemporaryDirectory() as tmpdir:
         tmpdir = Path(tmpdir)
-        req = CheckRequest(tmpdir=tmpdir, path=tmpdir.joinpath('test.zip'))
-        with ZipFile(req.path, 'w') as zf:
+        req = CheckRequest(
+            realpath=tmpdir.joinpath('test.zip'),
+            tmpdir=tmpdir,
+            virtpath='irrelevant')
+        with ZipFile(req.realpath, 'w') as zf:
             zf.writestr('good.txt', 'nice to meet you!')
             zf.writestr('bad.txt', 'this works fine')
-        old = req.path.read_bytes()
+        old = req.realpath.read_bytes()
         corrupt = old.replace(bytes('work', 'utf-8'), bytes('fail', 'utf-8'))
-        req.path.write_bytes(corrupt)
+        req.realpath.write_bytes(corrupt)
         res = ZipChecker().check(req)
         assert res.recognizer
         assert res.extracted
@@ -52,8 +61,11 @@ def test_corrupt_zip():
 def test_valid_zipfile():
     with TemporaryDirectory() as tmpdir:
         tmpdir = Path(tmpdir)
-        req = CheckRequest(tmpdir=tmpdir, path=tmpdir.joinpath('test.zip'))
-        with ZipFile(req.path, 'w') as zf:
+        req = CheckRequest(
+            realpath=tmpdir.joinpath('test.zip'),
+            tmpdir=tmpdir,
+            virtpath='irrelevant')
+        with ZipFile(req.realpath, 'w') as zf:
             zf.writestr('good.txt', 'nice to meet you!')
             zf.writestr('bad.txt', 'this works fine')
         res = ZipChecker().check(req)
@@ -69,8 +81,11 @@ def test_valid_zipfile():
 def test_not_tarfile():
     with TemporaryDirectory() as tmpdir:
         tmpdir = Path(tmpdir)
-        req = CheckRequest(tmpdir=tmpdir, path=tmpdir.joinpath('test.tar'))
-        req.path.write_text('garbage')
+        req = CheckRequest(
+            realpath=tmpdir.joinpath('test.tar'),
+            tmpdir=tmpdir,
+            virtpath='irrelevant')
+        req.realpath.write_text('garbage')
         res = TarChecker().check(req)
         assert res.recognizer is None
         assert res.extracted is None
@@ -80,7 +95,10 @@ def test_not_tarfile():
 def test_corrupt_tarfile():
     with TemporaryDirectory() as tmpdir:
         tmpdir = Path(tmpdir)
-        req = CheckRequest(tmpdir=tmpdir, path=tmpdir.joinpath('test.tar'))
+        req = CheckRequest(
+            realpath=tmpdir.joinpath('test.tar'),
+            tmpdir=tmpdir,
+            virtpath='irrelevant')
 
         dir1 = tmpdir.joinpath('alpha')
         dir1.mkdir()
@@ -88,12 +106,12 @@ def test_corrupt_tarfile():
         dir2.mkdir()
         dir1.joinpath('file1').write_text('hello' * 10)
         dir2.joinpath('file2').write_text('goodbye' * 10)
-        with tarfile.open(req.path, 'w:gz') as tf:
+        with tarfile.open(req.realpath, 'w:gz') as tf:
             tf.add(dir1, 'alpha')
             tf.add(dir2, 'beta')
-        data = bytearray(req.path.read_bytes())
+        data = bytearray(req.realpath.read_bytes())
         data[30] = 10
-        req.path.write_bytes(data)
+        req.realpath.write_bytes(data)
 
         res = TarChecker().check(req)
         assert res.recognizer is None  # TODO perhaps should be set
@@ -105,7 +123,10 @@ def test_corrupt_tarfile():
 def test_valid_tarfile():
     with TemporaryDirectory() as tmpdir:
         tmpdir = Path(tmpdir)
-        req = CheckRequest(tmpdir=tmpdir, path=tmpdir.joinpath('test.tar'))
+        req = CheckRequest(
+            realpath=tmpdir.joinpath('test.tar'),
+            tmpdir=tmpdir,
+            virtpath='irrelevant')
 
         dir1 = tmpdir.joinpath('alpha')
         dir1.mkdir()
@@ -115,7 +136,7 @@ def test_valid_tarfile():
         dir2.joinpath('file2').write_text('goodbye' * 10)
 
         def test_compression(compression):
-            with tarfile.open(req.path, f'w:{compression}') as tf:
+            with tarfile.open(req.realpath, f'w:{compression}') as tf:
                 tf.add(dir1, 'alpha')
                 tf.add(dir2, 'beta')
 
@@ -132,7 +153,7 @@ def test_valid_tarfile():
             assert path2.read_text() == 'goodbye' * 10
             assert res.errors == []
 
-            req.path.unlink()
+            req.realpath.unlink()
 
         test_compression('')
         test_compression('gz')

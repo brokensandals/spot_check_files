@@ -17,10 +17,11 @@ def test_supported():
     with TemporaryDirectory() as tmpdir:
         tmpdir = Path(tmpdir)
         req = CheckRequest(
+            realpath=tmpdir.joinpath('text.csv'),
             tmpdir=tmpdir,
-            path=tmpdir.joinpath('text.csv')
+            virtpath='irrelevant'
         )
-        req.path.write_text(_TEST_CSV)
+        req.realpath.write_text(_TEST_CSV)
         res1 = QLChecker().check(req)
         assert res1.recognizer
         assert res1.extracted is None
@@ -43,11 +44,12 @@ def test_unsupported():
     with TemporaryDirectory() as tmpdir:
         tmpdir = Path(tmpdir)
         req = CheckRequest(
-            tmpdir=tmpdir,
             # omit file extension so QuickLook won't know what to do with it
-            path=tmpdir.joinpath('text')
+            realpath=tmpdir.joinpath('text'),
+            tmpdir=tmpdir,
+            virtpath='irrelevant'
         )
-        req.path.write_text(_TEST_CSV)
+        req.realpath.write_text(_TEST_CSV)
         res = QLChecker().check(req)
         assert res.recognizer is None
         assert res.extracted is None
