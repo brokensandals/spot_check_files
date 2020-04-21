@@ -12,7 +12,7 @@ def test_not_zip():
         req = CheckRequest(tmpdir=tmpdir, path=tmpdir.joinpath('test.zip'))
         req.path.write_text('garbage')
         res = ZipChecker().check(req)
-        assert not res.identified
+        assert res.recognizer is None
         assert res.extracted is None
         assert res.errors == ['not a zipfile']
 
@@ -24,7 +24,7 @@ def test_empty_zip():
         with ZipFile(req.path, 'w') as zf:
             pass
         res = ZipChecker().check(req)
-        assert res.identified
+        assert res.recognizer
         assert res.extracted
         assert list(res.extracted.glob('**/*')) == []
         assert res.errors == []
@@ -41,7 +41,7 @@ def test_corrupt_zip():
         corrupt = old.replace(bytes('work', 'utf-8'), bytes('fail', 'utf-8'))
         req.path.write_bytes(corrupt)
         res = ZipChecker().check(req)
-        assert res.identified
+        assert res.recognizer
         assert res.extracted
         assert ([p.name for p in res.extracted.glob('**/*')]
                 == ['good.txt', 'bad.txt'])
@@ -57,7 +57,7 @@ def test_valid_zipfile():
             zf.writestr('good.txt', 'nice to meet you!')
             zf.writestr('bad.txt', 'this works fine')
         res = ZipChecker().check(req)
-        assert res.identified
+        assert res.recognizer
         assert res.extracted
         assert ([p.name for p in res.extracted.glob('**/*')]
                 == ['good.txt', 'bad.txt'])
@@ -72,7 +72,7 @@ def test_not_tarfile():
         req = CheckRequest(tmpdir=tmpdir, path=tmpdir.joinpath('test.tar'))
         req.path.write_text('garbage')
         res = TarChecker().check(req)
-        assert not res.identified
+        assert res.recognizer is None
         assert res.extracted is None
         assert res.errors == ['not a tarfile']
 
@@ -96,7 +96,7 @@ def test_corrupt_tarfile():
         req.path.write_bytes(data)
 
         res = TarChecker().check(req)
-        assert not res.identified  # TODO perhaps should be true
+        assert res.recognizer is None  # TODO perhaps should be set
         assert res.extracted is None
         assert len(res.errors) == 1
         assert 'Error -3' in str(res.errors[0])
@@ -120,7 +120,7 @@ def test_valid_tarfile():
                 tf.add(dir2, 'beta')
 
             res = TarChecker().check(req)
-            assert res.identified
+            assert res.recognizer
             assert res.extracted
             paths = [p for p in res.extracted.glob('**/*') if p.is_file()]
             assert len(paths) == 2

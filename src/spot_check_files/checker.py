@@ -26,14 +26,15 @@ class CheckResult:
         extracted - if the file was an archive, the path to the directory
                     containing its extracted contents. This should be a
                     subdirectory of the tmpdir specified in the request
-        identified - when False, indicates the checker was unsure if the
-                     given file was of a file type that it recognizes
+        recognizer - a Checker will set this to itself if it's confident
+                     that the file was valid or invalid; if the file type
+                     is still unclear, this may be None
         png - a thumbnail of the file
     """
     errors: List[Union[str, Exception]] = field(default_factory=list)
     extracted: Path = None
-    identified: bool = False
     png: bytes = None
+    recognizer: Checker = None
 
 
 class Checker:

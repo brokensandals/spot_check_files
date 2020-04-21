@@ -16,7 +16,7 @@ class ZipChecker(Checker):
                 result.errors.append('not a zipfile')
                 return result
 
-            result.identified = True
+            result.recognizer = self
 
             with ZipFile(req.path, 'r') as zf:
                 result.extracted = Path(tempfile.mkdtemp(dir=req.tmpdir))
@@ -41,7 +41,7 @@ class TarChecker(Checker):
                 result.errors.append('not a tarfile')
                 return result
 
-            result.identified = True
+            result.recognizer = self
 
             with tarfile.open(req.path, 'r') as tf:
                 result.extracted = Path(tempfile.mkdtemp(dir=req.tmpdir))

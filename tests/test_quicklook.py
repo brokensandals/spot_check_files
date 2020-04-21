@@ -22,14 +22,14 @@ def test_supported():
         )
         req.path.write_text(_TEST_CSV)
         res1 = QLChecker().check(req)
-        assert res1.identified
+        assert res1.recognizer
         assert res1.extracted is None
         assert res1.errors == []
         assert res1.png is None
 
         req.png = True
         res2 = QLChecker().check(req)
-        assert res2.identified
+        assert res2.recognizer
         assert res2.extracted is None
         assert res2.errors == []
         # I have no idea whether the Quick Look thumbnails are identical
@@ -49,7 +49,7 @@ def test_unsupported():
         )
         req.path.write_text(_TEST_CSV)
         res = QLChecker().check(req)
-        assert not res.identified
+        assert res.recognizer is None
         assert res.extracted is None
         assert res.errors == ['no png produced by qlmanage']
         assert res.png is None

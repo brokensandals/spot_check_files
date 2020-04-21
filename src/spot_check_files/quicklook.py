@@ -13,7 +13,7 @@ class QLChecker(Checker):
     thumbnails.
 
     A file is assumed to be "valid" if QuickLook generates a thumbnail for it.
-    If it doesn't, the checker will not mark the result as identified.
+    If it doesn't, the checker will not mark the result as recognized.
     """
     def check(self, req: CheckRequest) -> CheckResult:
         result = CheckResult()
@@ -25,7 +25,7 @@ class QLChecker(Checker):
 
         paths = list(Path(outdir).glob('*.png'))
         if paths:
-            result.identified = True
+            result.recognizer = self
             if req.png:
                 result.png = paths[0].read_bytes()
         else:
