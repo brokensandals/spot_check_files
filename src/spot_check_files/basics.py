@@ -57,16 +57,27 @@ def text_thumb(text: str) -> bytes:
 
 
 class CSVChecker(Checker):
+    """Checks a CSV or TSV file for problems.
+
+    Python's csv.Sniffer is used to try to determine the column delimiter;
+    if it can't figure it out, this checker will not mark the file as
+    recognized.
+    """
     def check(self, req: CheckRequest) -> CheckResult:
         result = CheckResult()
-        rows = []
-        with open(req.realpath, 'r', newline='') as file:
-            for row in csv.reader(file):
+        try:
+            rows = []
+            with open(req.realpath, 'r', newline='') as file:
+                dialect = csv.Sniffer().sniff(file.read(1024))
                 result.recognizer = self
-                if req.png and len(rows) < 20:
-                    rows.append(row[0:7])
-            if req.png:
-                result.png = table_thumb(rows)
+                file.seek(0)
+                for row in csv.reader(file, dialect):
+                    if req.png and len(rows) < 30:
+                        rows.append(row[0:7])
+                if req.png:
+                    result.png = table_thumb(rows)
+        except csv.Error as e:
+            result.errors.append(e)
         return result
 
 

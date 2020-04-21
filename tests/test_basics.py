@@ -40,12 +40,27 @@ def test_csv_missing_cols():
             realpath=td.joinpath('test.csv'),
             tmpdir=td,
             virtpath=Path('irrelevant'))
-        req.png = True
         req.realpath.write_text('a,b,c\n1,2')
+        res = CSVChecker().check(req)
+        assert res.recognizer is None
+        assert len(res.errors) == 1
+        assert str(res.errors[0]) == 'Could not determine delimiter'
+
+
+def test_tsv():
+    with TemporaryDirectory() as td:
+        td = Path(td)
+        req = CheckRequest(
+            realpath=td.joinpath('test.tsv'),
+            tmpdir=td,
+            virtpath=Path('irrelevant'))
+        req.png = True
+        req.realpath.write_text(_TEST_CSV.replace(',', '\t'))
         res = CSVChecker().check(req)
         assert isinstance(res.recognizer, CSVChecker)
         assert res.errors == []
-        assert res.png
+        expected = Path('tests').joinpath('csv.png').read_bytes()
+        assert res.png == expected
 
 
 def test_plaintext_valid():
