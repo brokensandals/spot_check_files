@@ -33,6 +33,21 @@ def test_csv_valid():
         assert res.png == expected
 
 
+def test_csv_missing_cols():
+    with TemporaryDirectory() as td:
+        td = Path(td)
+        req = CheckRequest(
+            realpath=td.joinpath('test.csv'),
+            tmpdir=td,
+            virtpath=Path('irrelevant'))
+        req.png = True
+        req.realpath.write_text('a,b,c\n1,2')
+        res = CSVChecker().check(req)
+        assert isinstance(res.recognizer, CSVChecker)
+        assert res.errors == []
+        assert res.png
+
+
 def test_plaintext_valid():
     with TemporaryDirectory() as td:
         td = Path(td)

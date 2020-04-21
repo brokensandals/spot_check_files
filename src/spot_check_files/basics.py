@@ -24,11 +24,18 @@ def table_thumb(rows: List[List[str]]) -> bytes:
     font = _font()
     height = draw.textsize(' ')[1] + 5
     x = 0
+
+    def rowcol(r, c):
+        if c < len(r):
+            return r[c]
+        else:
+            return ''
+
     for col in range(len(rows[0])):
-        maxlen = min(max(len(r[col]) for r in rows), 30)
+        maxlen = min(max(len(rowcol(r, col)) for r in rows), 30)
         y = 0
         for row in rows:
-            text = row[col].replace('\n', '\\n')[0:maxlen]
+            text = rowcol(row, col).replace('\n', '\\n')[0:maxlen]
             draw.text((x, y), text, fill=0, font=font)
             y += height
         x += draw.textsize(' ' * maxlen, font=font)[0] + 5
