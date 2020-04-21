@@ -1,4 +1,5 @@
 from pathlib import Path
+from PIL import Image
 from tempfile import TemporaryDirectory
 from spot_check_files.basics import CSVChecker, PlaintextChecker
 from spot_check_files.checker import CheckRequest
@@ -24,13 +25,13 @@ def test_csv_valid():
         res = CSVChecker().check(req)
         assert isinstance(res.recognizer, CSVChecker)
         assert res.errors == []
-        assert res.png is None
+        assert res.thumb is None
 
-        req.png = True
+        req.thumb = True
         res = CSVChecker().check(req)
         assert res.errors == []
-        expected = Path('tests').joinpath('csv.png').read_bytes()
-        assert res.png == expected
+        with Image.open(str(Path('tests').joinpath('csv.png'))) as img:
+            assert res.thumb.tobytes() == img.tobytes()
 
 
 def test_csv_missing_cols():
@@ -54,13 +55,13 @@ def test_tsv():
             realpath=td.joinpath('test.tsv'),
             tmpdir=td,
             virtpath=Path('irrelevant'))
-        req.png = True
+        req.thumb = True
         req.realpath.write_text(_TEST_CSV.replace(',', '\t'))
         res = CSVChecker().check(req)
         assert isinstance(res.recognizer, CSVChecker)
         assert res.errors == []
-        expected = Path('tests').joinpath('csv.png').read_bytes()
-        assert res.png == expected
+        with Image.open(str(Path('tests').joinpath('csv.png'))) as img:
+            assert res.thumb.tobytes() == img.tobytes()
 
 
 def test_plaintext_valid():
@@ -74,15 +75,15 @@ def test_plaintext_valid():
         res = PlaintextChecker().check(req)
         assert isinstance(res.recognizer, PlaintextChecker)
         assert res.errors == []
-        assert res.png is None
+        assert res.thumb is None
 
-        req.png = True
+        req.thumb = True
         res = PlaintextChecker().check(req)
         assert res.errors == []
         # The font I'm currently using doesn't handle emoji but I don't
         # really care right now
-        expected = Path('tests').joinpath('plaintext.png').read_bytes()
-        assert res.png == expected
+        with Image.open(str(Path('tests').joinpath('plaintext.png'))) as img:
+            assert res.thumb.tobytes() == img.tobytes()
 
 
 def test_plaintext_encoding_error():
@@ -99,4 +100,4 @@ def test_plaintext_encoding_error():
         assert isinstance(res.recognizer, PlaintextChecker)
         assert len(res.errors) == 1
         assert isinstance(res.errors[0], UnicodeDecodeError)
-        assert res.png is None
+        assert res.thumb is None

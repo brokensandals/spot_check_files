@@ -1,6 +1,5 @@
 import csv
 from importlib import resources
-from io import BytesIO
 from PIL import Image, ImageDraw, ImageFont
 from typing import List
 from spot_check_files import _monoid_font
@@ -18,7 +17,7 @@ def _font():
 
 
 def table_thumb(rows: List[List[str]]) -> bytes:
-    """Builds a PNG thumbnail for a table."""
+    """Builds a thumbnail for a table."""
     img = Image.new('L', (300, 300), color=255)
     draw = ImageDraw.Draw(img)
     font = _font()
@@ -41,19 +40,15 @@ def table_thumb(rows: List[List[str]]) -> bytes:
         x += draw.textsize(' ' * maxlen, font=font)[0] + 5
         draw.line([(x, 2), (x, y - 2)], fill=128)
         x += 5
-    io = BytesIO()
-    img.save(io, 'png')
-    return io.getvalue()
+    return img
 
 
 def text_thumb(text: str) -> bytes:
-    """Builds a PNG thumbnail for the given text."""
+    """Builds a thumbnail for the given text."""
     img = Image.new('L', (300, 300), color=255)
     draw = ImageDraw.Draw(img)
     draw.multiline_text((0, 0), text, fill=0, font=_font())
-    io = BytesIO()
-    img.save(io, 'png')
-    return io.getvalue()
+    return img
 
 
 class CSVChecker(Checker):
@@ -75,10 +70,10 @@ class CSVChecker(Checker):
                 result.recognizer = self
                 file.seek(0)
                 for row in csv.reader(file, dialect):
-                    if req.png and len(rows) < 30:
+                    if req.thumb and len(rows) < 30:
                         rows.append(row[0:7])
-                if req.png:
-                    result.png = table_thumb(rows)
+                if req.thumb:
+                    result.thumb = table_thumb(rows)
         except csv.Error as e:
             result.errors.append(e)
         return result
@@ -102,11 +97,11 @@ class PlaintextChecker(Checker):
             with open(req.realpath, 'r') as file:
                 result.recognizer = self
                 for line in file:
-                    if req.png and len(lines) < 500:
+                    if req.thumb and len(lines) < 500:
                         lines.append(line[0:500])
                     pass
-            if req.png:
-                result.png = text_thumb(''.join(lines))
+            if req.thumb:
+                result.thumb = text_thumb(''.join(lines))
         except ValueError as e:
             result.errors.append(e)
         return result

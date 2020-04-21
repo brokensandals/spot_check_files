@@ -13,7 +13,7 @@ def _print_pngs(summaries):
     summaries = list(summaries)
 
     for summary in summaries:
-        imgcat(summary.result.png)
+        imgcat(summary.result.thumb)
 
 
 class _GroupStats:
@@ -39,7 +39,7 @@ class CheckReport:
         leaf_summaries = [s for s in summaries
                           if s.result.errors or not s.result.extracted]
         self.err_summaries = [s for s in leaf_summaries if s.result.errors]
-        self.png_summaries = [s for s in leaf_summaries if s.result.png]
+        self.png_summaries = [s for s in leaf_summaries if s.result.thumb]
         self.groups = [
             _GroupStats('Archives (without errors)', arch_summaries),
             _GroupStats('Files (excludes errorless archives)',

@@ -1,5 +1,6 @@
 from __future__ import annotations
 from dataclasses import dataclass, field
+from PIL import Image
 from pathlib import Path
 import platform
 from tempfile import TemporaryDirectory
@@ -16,12 +17,12 @@ class CheckRequest:
         virtpath - logical path associated with the file. For example,
                    if the file "foo/bar.txt" was extracted from "a.zip",
                    this might be "a.zip/foo/bar.txt".
-        png - if True, a png thumbnail should be generated
+        thumb - if True, a thumbnail should be generated
     """
     realpath: Path
     tmpdir: Path
     virtpath: Path
-    png: bool = False
+    thumb: bool = False
 
 
 @dataclass
@@ -35,11 +36,11 @@ class CheckResult:
         recognizer - a Checker will set this to itself if it's confident
                      that the file was valid or invalid; if the file type
                      is still unclear, this may be None
-        png - a thumbnail of the file
+        thumb - a thumbnail of the file
     """
     errors: List[Union[str, Exception]] = field(default_factory=list)
     extracted: Path = None
-    png: bytes = None
+    thumb: Image = None
     recognizer: Checker = None
 
 
@@ -123,7 +124,8 @@ class CheckerRunner:
             results.append(summary)
             for checker in self.checkers:
                 req = CheckRequest(
-                    realpath=path, tmpdir=tmpdir, virtpath=virtpath, png=True)
+                    realpath=path, tmpdir=tmpdir, virtpath=virtpath,
+                    thumb=True)
                 res = checker.check(req)
                 if res.recognizer:
                     summary.result = res

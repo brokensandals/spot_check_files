@@ -1,4 +1,5 @@
 from pathlib import Path
+from PIL import Image
 import shutil
 import subprocess
 import tempfile
@@ -29,8 +30,10 @@ class QLChecker(Checker):
         paths = list(Path(outdir).glob('*.png'))
         if paths:
             result.recognizer = self
-            if req.png:
-                result.png = paths[0].read_bytes()
+            if req.thumb:
+                with Image.open(str(paths[0])) as img:
+                    img.load()
+                    result.thumb = img
         else:
             result.errors.append('no png produced by qlmanage')
 

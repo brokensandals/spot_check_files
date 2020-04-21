@@ -1,4 +1,5 @@
 from pathlib import Path
+from PIL import Image
 from tempfile import TemporaryDirectory
 from spot_check_files.checker import CheckRequest
 from spot_check_files.quicklook import QLChecker
@@ -26,9 +27,9 @@ def test_supported():
         assert res1.recognizer
         assert res1.extracted is None
         assert res1.errors == []
-        assert res1.png is None
+        assert res1.thumb is None
 
-        req.png = True
+        req.thumb = True
         res2 = QLChecker().check(req)
         assert res2.recognizer
         assert res2.extracted is None
@@ -36,8 +37,8 @@ def test_supported():
         # I have no idea whether the Quick Look thumbnails are identical
         # across MacOS installations, let alone across different versions
         # of the OS, so this test may be extremely brittle
-        expected = Path('tests').joinpath('quicklook.png').read_bytes()
-        assert res2.png == expected
+        with Image.open(str(Path('tests').joinpath('quicklook.png'))) as img:
+            assert res2.thumb.tobytes() == img.tobytes()
 
 
 def test_unsupported():
@@ -54,4 +55,4 @@ def test_unsupported():
         assert res.recognizer is None
         assert res.extracted is None
         assert res.errors == ['no png produced by qlmanage']
-        assert res.png is None
+        assert res.thumb is None
