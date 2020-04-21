@@ -6,6 +6,9 @@ from spot_check_files.checker import Checker, CheckResult, CheckRequest
 
 
 class QLChecker(Checker):
+    def __str__(self):
+        return 'QLChecker'
+
     """Checks files using QuickLook (MacOS only).
 
     This invokes the qlmanage command-line app and is fairly slow, but

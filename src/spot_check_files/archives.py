@@ -7,6 +7,9 @@ from spot_check_files.checker import Checker, CheckResult, CheckRequest
 
 
 class ZipChecker(Checker):
+    def __str__(self):
+        return 'ZipChecker'
+
     """Extracts zip files."""
     def check(self, req: CheckRequest) -> CheckResult:
         result = CheckResult()
@@ -28,6 +31,9 @@ class ZipChecker(Checker):
 
 
 class TarChecker(Checker):
+    def __str__(self):
+        return 'TarChecker'
+
     """Extracts tar files.
 
     Tars may be compressed with any formats the python tarfile lib supports,
