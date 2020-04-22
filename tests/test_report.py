@@ -24,7 +24,6 @@ def test_empty(capsys):
     _HTMLDIR.joinpath('empty.html').write_text(html)
 
 
-
 def test_errors(capsys):
     s1 = FileSummary(
         size=15, virtpath=Path('alpha/file1.txt'),

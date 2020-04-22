@@ -1,7 +1,9 @@
+import json
 from pathlib import Path
 from PIL import Image, UnidentifiedImageError
 from tempfile import TemporaryDirectory
-from spot_check_files.basics import CSVChecker, ImageChecker, PlaintextChecker
+from spot_check_files.basics import CSVChecker, ImageChecker,\
+    JSONChecker, PlaintextChecker
 from spot_check_files.checker import CheckRequest
 
 
@@ -12,6 +14,21 @@ _TEST_CSV = """x,x^2,x cubed in words,x^3
 4,16,sixteen,64
 5,25,one hundred and twenty-five,125
 """
+
+
+_TEST_JSON = """{"hello": {
+  "nicely_formatted": false, "valid": true,
+  "array": [1, 2, 3, 4, 5, 6, 7, 8, 9,
+    "This is a multiline string.\\nHuzzah."]
+}
+}"""
+
+
+_IMGDIR = Path('tmp')
+
+
+def setup_module(module):
+    _IMGDIR.mkdir(exist_ok=True)
 
 
 def test_csv_valid():
@@ -30,6 +47,7 @@ def test_csv_valid():
         req.thumb = True
         res = CSVChecker().check(req)
         assert res.errors == []
+        res.thumb.save(str(Path(_IMGDIR).joinpath('csv.png')))
         with Image.open(str(Path('tests').joinpath('csv.png'))) as img:
             assert res.thumb.tobytes() == img.tobytes()
 
@@ -60,6 +78,7 @@ def test_tsv():
         res = CSVChecker().check(req)
         assert isinstance(res.recognizer, CSVChecker)
         assert res.errors == []
+        res.thumb.save(str(Path(_IMGDIR).joinpath('tsv.png')))
         with Image.open(str(Path('tests').joinpath('csv.png'))) as img:
             assert res.thumb.tobytes() == img.tobytes()
 
@@ -79,6 +98,7 @@ def test_image_valid():
         req.thumb = True
         res = ImageChecker().check(req)
         assert res.errors == []
+        res.thumb.save(str(Path(_IMGDIR).joinpath('image.png')))
         with Image.open(Path('tests').joinpath('image.png')) as img:
             assert res.thumb.tobytes() == img.tobytes()
 
@@ -98,6 +118,41 @@ def test_image_invalid():
         assert res.thumb is None
 
 
+def test_json_valid():
+    with TemporaryDirectory() as td:
+        td = Path(td)
+        req = CheckRequest(
+            realpath=td.joinpath('test.json'),
+            tmpdir=td,
+            virtpath=Path('irrelevant'))
+        req.realpath.write_text(_TEST_JSON)
+        res = JSONChecker().check(req)
+        assert isinstance(res.recognizer, JSONChecker)
+        assert res.errors == []
+        assert res.thumb is None
+
+        req.thumb = True
+        res = JSONChecker().check(req)
+        assert res.errors == []
+        res.thumb.save(str(Path(_IMGDIR).joinpath('json.png')))
+        with Image.open(Path('tests').joinpath('json.png')) as img:
+            assert res.thumb.tobytes() == img.tobytes()
+
+
+def test_json_invalid():
+    with TemporaryDirectory() as td:
+        td = Path(td)
+        req = CheckRequest(
+            realpath=td.joinpath('test.json'),
+            tmpdir=td,
+            virtpath=Path('irrelevant'))
+        req.realpath.write_text('{"garbage": true')
+        res = JSONChecker().check(req)
+        assert res.recognizer is None
+        assert len(res.errors) == 1
+        assert isinstance(res.errors[0], json.JSONDecodeError)
+
+
 def test_plaintext_valid():
     with TemporaryDirectory() as td:
         td = Path(td)
@@ -114,6 +169,7 @@ def test_plaintext_valid():
         req.thumb = True
         res = PlaintextChecker().check(req)
         assert res.errors == []
+        res.thumb.save(str(Path(_IMGDIR).joinpath('plaintext.png')))
         # The font I'm currently using doesn't handle emoji but I don't
         # really care right now
         with Image.open(str(Path('tests').joinpath('plaintext.png'))) as img:

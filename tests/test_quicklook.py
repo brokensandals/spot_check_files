@@ -14,6 +14,13 @@ _TEST_CSV = """x,x^2,x^3
 """
 
 
+_IMGDIR = Path('tmp')
+
+
+def setup_module(module):
+    _IMGDIR.mkdir(exist_ok=True)
+
+
 def test_supported():
     with TemporaryDirectory() as tmpdir:
         tmpdir = Path(tmpdir)
@@ -34,6 +41,7 @@ def test_supported():
         assert res2.recognizer
         assert res2.extracted is None
         assert res2.errors == []
+        res2.thumb.save(str(Path(_IMGDIR).joinpath('quicklook.png')))
         # I have no idea whether the Quick Look thumbnails are identical
         # across MacOS installations, let alone across different versions
         # of the OS, so this test may be extremely brittle

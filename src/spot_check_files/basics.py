@@ -1,5 +1,6 @@
 import csv
 from importlib import resources
+import json
 from PIL import Image, ImageDraw, ImageFont, UnidentifiedImageError
 from typing import List
 from spot_check_files import _monoid_font
@@ -105,6 +106,30 @@ class ImageChecker(Checker):
         return result
 
 
+class JSONChecker(Checker):
+    """Checks that a file is valid JSON.
+
+    If the file cannot be parsed, it will not be marked as recognized.
+    """
+    def __str__(self):
+        return 'JSONChecker'
+
+    def check(self, req: CheckRequest) -> CheckResult:
+        result = CheckResult()
+        with req.realpath.open('r') as file:
+            try:
+                parsed = json.load(file)
+                result.recognizer = self
+            except json.JSONDecodeError as e:
+                result.errors.append(e)
+        if req.thumb:
+            pretty = json.dumps(parsed, indent=2)
+            # Don't send an excessive amount of text to Pillow
+            lines = [s[0:100] for s in pretty.splitlines()[0:100]]
+            result.thumb = text_thumb('\n'.join(lines))
+        return result
+
+
 class PlaintextChecker(Checker):
     """Checks a plaintext file for encoding problems.
 
@@ -123,8 +148,8 @@ class PlaintextChecker(Checker):
             with open(req.realpath, 'r') as file:
                 result.recognizer = self
                 for line in file:
-                    if req.thumb and len(lines) < 500:
-                        lines.append(line[0:500])
+                    if req.thumb and len(lines) < 100:
+                        lines.append(line[0:100])
                     pass
             if req.thumb:
                 result.thumb = text_thumb(''.join(lines))
