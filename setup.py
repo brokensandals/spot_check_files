@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="spot_check_files",
-    version="0.0.1",
+    version="0.0.2",
     author="Jacob Williams",
     author_email="jacobaw@gmail.com",
     description="Helps validate the integrity of data backups/exports.",
