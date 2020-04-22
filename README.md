@@ -37,11 +37,11 @@ Alternatively, you can generate an HTML report:
 spotcheck -H PATH > out.html
 ```
 
-The full list of options can be seen in [here](doc/usage.txt) or by running `spotcheck --help`.
+The full list of options can be seen [here](doc/usage.txt) or by running `spotcheck --help`.
 
 This tool can also be used programmatically.
 The main entry point for the library is the `CheckerRunner` class in [spot_check_files.checker](src/spot_check_files/checker.py).
-You can add support for new file types by implementing the `Checker` class in that module.
+You can add support for new file types by subclassing the `Checker` class from that module.
 
 ## Supported file types
 
