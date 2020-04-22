@@ -1,0 +1,16 @@
+ERRORS for test.zip/test.xml
+	not well-formed (invalid token): line 1, column 0
+	expected to be recognized by XMLChecker because filename matched: *.xml
+
++-------------------------------------+-------+--------+---------+--------+
+| Group                               | Files |   Size | % Files | % Size |
++-------------------------------------+-------+--------+---------+--------+
+| Archives (without errors)           |     1 | 571211 |         |        |
+| Files (excludes errorless archives) |     4 | 570789 |         |        |
+| Files with thumbnails               |     3 | 462818 |     75% |    81% |
+| Files with ERRORS                   |     1 | 107971 |     25% |    19% |
+| Recognized by CSVChecker            |     1 |    349 |     25% |     0% |
+| Recognized by FileNameChecker       |     1 | 107971 |     25% |    19% |
+| Recognized by ImageChecker          |     1 | 462437 |     25% |    81% |
+| Recognized by JSONChecker           |     1 |     32 |     25% |     0% |
++-------------------------------------+-------+--------+---------+--------+

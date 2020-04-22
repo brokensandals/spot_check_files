@@ -3,7 +3,7 @@ import base64
 from io import BytesIO
 import os
 from PIL import Image
-from terminaltables import SingleTable
+from terminaltables import AsciiTable
 from typing import List
 from spot_check_files.checker import FileSummary
 
@@ -116,7 +116,7 @@ class CheckReport:
                       g.size,
                       g.count_pct,
                       g.size_pct) for g in self.groups)
-        table = SingleTable(stats)
+        table = AsciiTable(stats)
         for i in range(1, 5):
             table.justify_columns[i] = 'right'
         print(table.table)

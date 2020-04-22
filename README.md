@@ -6,6 +6,14 @@ This is a tool to help validate the integrity of a set of files, e.g. data backu
 - Generates thumbnails of files when possible.
 - Displays statistics about file types and unrecognized files.
 
+It produces a report like the following in the terminal (seeing images in the terminal requires iTerm2):
+
+![screenshot of sample output in iTerm2](doc/sample-out-iterm.png)
+
+Or [as HTML](doc/sample-out.html):
+
+![screenshot of rendered sample HTML output](doc/sample-out.html.png)
+
 ## Usage
 
 Install:

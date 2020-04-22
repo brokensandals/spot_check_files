@@ -59,6 +59,14 @@ class FileNameChecker(Checker):
 
         return cls(checkers)
 
+    def __str__(self):
+        # TODO it's bad that this doesn't include any details about
+        #      the instance. Possibly I shouldn't be using __str__
+        #      in the reports, so that there would be less pressure
+        #      for this to be short/readable. Ideally even the report
+        #      would print some way of distinguishing instances, though.
+        return 'FileNameChecker'
+
     def __init__(self, checkers: List[Tuple[str, Checker]] = []):
         self.checkers = list(checkers)
 
