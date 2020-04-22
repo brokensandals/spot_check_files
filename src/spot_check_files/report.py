@@ -61,15 +61,33 @@ class CheckReport:
         ]
 
         by_rec = {}
+        unrec_by_ext = {}
         for summary in leaf_summaries:
-            rec = str(summary.result.recognizer)
-            if rec not in by_rec:
-                by_rec[rec] = []
-            by_rec[rec].append(summary)
+            if summary.result.recognizer is None:
+                ext = summary.virtpath.suffix
+                if ext:
+                    if ext not in unrec_by_ext:
+                        unrec_by_ext[ext] = []
+                    unrec_by_ext[ext].append(summary)
+            else:
+                rec = str(summary.result.recognizer)
+                if rec not in by_rec:
+                    by_rec[rec] = []
+                by_rec[rec].append(summary)
 
         for rec in sorted(by_rec.keys()):
             self.groups.append(_GroupStats(f'Recognized by {rec}',
                                            by_rec[rec], leaf_summaries))
+
+        for ext in sorted(unrec_by_ext.keys()):
+            if not ext:
+                continue
+            self.groups.append(_GroupStats(
+                f'Unrecognized files with extension {ext}',
+                unrec_by_ext[ext], leaf_summaries))
+        if '' in unrec_by_ext:
+            self.groups.append(_GroupStats(
+                'Other unrecognized files', unrec_by_ext[''], leaf_summaries))
 
     def print(self):
         if os.environ.get('TERM_PROGRAM', None) == 'iTerm.app':
