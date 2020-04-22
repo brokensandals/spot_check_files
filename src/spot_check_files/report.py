@@ -1,3 +1,5 @@
+import base64
+from io import BytesIO
 import os
 from PIL import Image
 from terminaltables import SingleTable
@@ -52,12 +54,12 @@ class CheckReport:
         leaf_summaries = [s for s in summaries
                           if s.result.errors or not s.result.extracted]
         self.err_summaries = [s for s in leaf_summaries if s.result.errors]
-        self.png_summaries = [s for s in leaf_summaries if s.result.thumb]
+        self.thumb_summaries = [s for s in leaf_summaries if s.result.thumb]
         self.groups = [
             _GroupStats('Archives (without errors)', arch_summaries),
             _GroupStats('Files (excludes errorless archives)',
                         leaf_summaries),
-            _GroupStats('Files with thumbnails', self.png_summaries,
+            _GroupStats('Files with thumbnails', self.thumb_summaries,
                         leaf_summaries),
             _GroupStats('Files with ERRORS', self.err_summaries,
                         leaf_summaries),
@@ -93,7 +95,7 @@ class CheckReport:
 
     def print(self):
         if os.environ.get('TERM_PROGRAM', None) == 'iTerm.app':
-            _print_thumbs(self.png_summaries)
+            _print_thumbs(self.thumb_summaries)
 
         for summary in self.err_summaries:
             print(f'ERRORS for {summary.virtpath}')
@@ -111,3 +113,20 @@ class CheckReport:
         for i in range(1, 5):
             table.justify_columns[i] = 'right'
         print(table.table)
+
+    def html(self):
+        from jinja2 import Environment, PackageLoader, select_autoescape
+
+        def thumburl(summary):
+            data = BytesIO()
+            summary.result.thumb.save(data, 'png')
+            encdata = base64.b64encode(data.getvalue()).decode('utf-8')
+            return f'data:image/png;base64,{encdata}'
+
+        env = Environment(
+            loader=PackageLoader('spot_check_files', '_templates'),
+            autoescape=select_autoescape(['html']),
+            trim_blocks=True)
+        env.globals['thumburl'] = thumburl
+        template = env.get_template('report.html')
+        return template.render(vars(self))
