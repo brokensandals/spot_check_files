@@ -14,3 +14,4 @@ def main(args=None):
         summaries.extend(runner.check_path(Path(path)))
     report = CheckReport(summaries)
     report.print()
+    return 0

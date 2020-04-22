@@ -13,10 +13,11 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     url="https://github.com/brokensandals/spot_check_files",
     packages=setuptools.find_packages('src'),
-    package_dir={'':'src'},
+    package_data={'spot_check_files._monoid_font': ['Monoid-Regular.ttf']},
+    package_dir={'': 'src'},
     entry_points={
         'console_scripts': [
-            'spot_check_files = spot_check_files.cli:main'
+            'spotcheck = spot_check_files.cli:main'
         ]
     },
     classifiers=[

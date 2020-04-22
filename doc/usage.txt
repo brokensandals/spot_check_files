@@ -1,0 +1,7 @@
+usage: spotcheck [-h] path [path ...]
+
+positional arguments:
+  path        file or folders to check
+
+optional arguments:
+  -h, --help  show this help message and exit
