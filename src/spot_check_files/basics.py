@@ -94,7 +94,13 @@ class ImageChecker(Checker):
                 if req.thumb:
                     img.thumbnail((300, 300))
                     result.thumb = img
+        except OSError as e:
+            # An issue I've encountered but haven't dug into yet.
+            result.errors.append(e)
         except UnidentifiedImageError as e:
+            result.errors.append(e)
+        except ZeroDivisionError as e:
+            # An issue I've encountered but haven't dug into yet.
             result.errors.append(e)
         return result
 

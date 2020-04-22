@@ -15,14 +15,17 @@ def _print_thumbs(summaries):
         # Combine images to show three per line in the output
         group = [s.result.thumb for s in summaries[0:3]]
         boxes = [i.getbbox() for i in group]
-        width = sum(b[2] - b[0] + 1 for b in boxes)
-        height = max(b[3] - b[1] + 1 for b in boxes)
-        img = Image.new('RGBA', (width, height))
-        x = 0
-        for i in range(len(group)):
-            img.paste(group[i], (x, 0))
-            x += boxes[i][2] - boxes[i][0] + 1
-        imgcat(img)
+        if any(boxes):
+            width = sum(b[2] - b[0] + 1 for b in boxes if b)
+            height = max(b[3] - b[1] + 1 for b in boxes if b)
+            img = Image.new('RGBA', (width, height))
+            x = 0
+            for i in range(len(group)):
+                if boxes[i] is None:
+                    continue
+                img.paste(group[i], (x, 0))
+                x += boxes[i][2] - boxes[i][0] + 1
+            imgcat(img)
         summaries = summaries[3:]
 
 
