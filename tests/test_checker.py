@@ -1,56 +1,53 @@
-from io import BytesIO
 from pathlib import Path
 from tempfile import TemporaryDirectory
-import zipfile
-from spot_check_files.checker import Checker
+from zipfile import ZipFile
+from spot_check_files.archives import ZipChecker
+from spot_check_files.basics import CSVChecker, PlaintextChecker
+from spot_check_files.checker import CheckerRunner
 
 
-def _make_sample_zip():
-    data = BytesIO()
-    with zipfile.ZipFile(data, 'w', compression=zipfile.ZIP_DEFLATED) as zf:
-        zf.writestr('folder/file1.json', '{"happy": true}')
-        zf.writestr('folder/file2.txt', 'melancholy')
-
-        data2 = BytesIO()
-        with zipfile.ZipFile(
-                data2, 'w', compression=zipfile.ZIP_DEFLATED) as zf2:
-            zf2.writestr('file3.xml', '<stuff><thing /></stuff>')
-            zf2.writestr('garbage.json', '{"sad": ')
-        data2.seek(0)
-        zf.writestr('nested.zip', data2.read())
-
-        zf.writestr('garbage.zip', bytes())
-    data.seek(0)
-    return data.read()
+def test_check_path_single_file():
+    with TemporaryDirectory() as td:
+        td = Path(td)
+        fpath = td.joinpath('test.csv')
+        fpath.write_text('a,b,c\n1,2,3')
+        cr = CheckerRunner.default()
+        s = cr.check_path(fpath)
+        assert len(s) == 1
+        assert s[0].size == 11
+        assert s[0].virtpath == fpath
+        assert isinstance(s[0].result.recognizer, CSVChecker)
+        assert s[0].result.errors == []
 
 
-def _assert_sample_inspect(pathseq, checker):
-    assert {i.pathseq: i.problems for i in checker.files if i.problems} == {
-        pathseq + ('garbage.zip',): ['not a zipfile'],
-        pathseq + ('nested.zip', 'garbage.json'): ['invalid json'],
-    }
-
-    assert len(checker.files) == 7
-
-    assert sorted([i.pathseq for i in checker.files]) == [
-        pathseq,
-        pathseq + ('folder/file1.json',),
-        pathseq + ('folder/file2.txt',),
-        pathseq + ('garbage.zip',),
-        pathseq + ('nested.zip',),
-        pathseq + ('nested.zip', 'file3.xml'),
-        pathseq + ('nested.zip', 'garbage.json'),
-    ]
-
-    assert (sorted([i.pathseq for i in checker.thumbnail_files])
-            == [])  # TODO
-
-
-def test_check_path():
-    with TemporaryDirectory() as tmpdir:
-        tmpdir = Path(tmpdir)
-        path = tmpdir.joinpath('sample.zip')
-        path.write_bytes(_make_sample_zip())
-        checker = Checker(num_thumbnails=10)
-        checker.check_path(str(path))
-        _assert_sample_inspect((str(path),), checker)
+def test_check_path_dir():
+    with TemporaryDirectory() as td:
+        td = Path(td)
+        fpath1 = td.joinpath('test.csv')
+        fpath1.write_text('a,b,c\n1,2,3')
+        fpath2 = td.joinpath('test.zip')
+        with ZipFile(fpath2, 'w') as zf:
+            zf.writestr('alpha/file1.txt', 'hello')
+            zf.writestr('beta/file2.txt', 'goodbye')
+        vpath3 = fpath2.joinpath('alpha', 'file1.txt')
+        vpath4 = fpath2.joinpath('beta', 'file2.txt')
+        cr = CheckerRunner.default()
+        s = cr.check_path(td)
+        s.sort(key=lambda x: x.virtpath.name)
+        assert len(s) == 4
+        assert s[2].size == 11
+        assert s[2].virtpath == fpath1
+        assert isinstance(s[2].result.recognizer, CSVChecker)
+        assert s[2].result.errors == []
+        assert s[3].size == fpath2.stat().st_size
+        assert s[3].virtpath == fpath2
+        assert isinstance(s[3].result.recognizer, ZipChecker)
+        assert s[3].result.errors == []
+        assert s[0].size == 5
+        assert s[0].virtpath == vpath3
+        assert isinstance(s[0].result.recognizer, PlaintextChecker)
+        assert s[0].result.errors == []
+        assert s[1].size == 7
+        assert s[1].virtpath == vpath4
+        assert isinstance(s[1].result.recognizer, PlaintextChecker)
+        assert s[1].result.errors == []

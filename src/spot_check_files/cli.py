@@ -1,54 +1,32 @@
+"""Implements the spotcheck command-line tool."""
 import argparse
-import platform
-from spot_check_files.checker import Checker, default_inspectors
-from spot_check_files.qlinspector import QLInspector
-from spot_check_files.report import Report
+from pathlib import Path
+from typing import List
+from spot_check_files.checker import CheckerRunner
+from spot_check_files.report import CheckReport
 
 
-def main(args=None):
+def main(args: List[str] = None) -> int:
+    """Checks one or more paths and displays the output.
+
+    See docs/usage.txt for usage.
+
+    If args is omitted, the process's command-line args are used.
+
+    Returns 0 to indicate success.
+    """
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        'path', nargs='+',
-        help='files or folders to check')
-    parser.add_argument(
-        '-H', '--html', action='store_true', default=False,
-        help='output html')
-    parser.add_argument(
-        '-t', '--thumbnails', nargs=1, type=int,
-        help='maximum number of thumbnails to generate')
-    parser.add_argument(
-        '-s', '--streaming', action='store_true',
-        help='avoid extracting files to disk when possible')
-    parser.add_argument(
-        '-q', '--quicklook',
-        choices=['off', 'thumbnails', 'checks', 'auto'],
-        default='auto',
-        help='Whether to use OS X\'s Quick Look on files. '
-             'Quick Look can enable recognizing far more file types, but '
-             'invoking it is slow. '
-             '"off" means never use it. '
-             '"thumbnails" means only use it when generating a thumbnail.'
-             '"checks" means invoke it for all unrecognized files.'
-             '"auto" means "checks" on OS X, otherwise "off".')
-    parser.set_defaults(thumbnails=[3], streaming=False)
+    parser.add_argument('path', nargs='+', help='file or folders to check')
+    parser.add_argument('-H', '--html', action='store_true', default=False,
+                        help='output HTML')
     args = parser.parse_args(args)
-
-    inspectors = default_inspectors(streaming=args.streaming)
-    if (args.quicklook == 'auto' and platform.mac_ver()[0])\
-       or args.quicklook != 'off':
-        inspectors.append((r'.*',
-                           QLInspector(args.quicklook == 'thumbnails')))
-    checker = Checker(
-        num_thumbnails=args.thumbnails[0],
-        inspectors=inspectors)
-
+    runner = CheckerRunner.default()
+    summaries = []
     for path in args.path:
-        checker.check_path(path)
-
-    report = Report(checker.files, checker.thumbnail_files)
+        summaries.extend(runner.check_path(Path(path)))
+    report = CheckReport(summaries)
     if args.html:
         print(report.html())
     else:
         report.print()
-
     return 0

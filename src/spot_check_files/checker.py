@@ -1,80 +1,149 @@
+"""Defines the API for file checkers and a helper class for running them.
+
+The Checker abstract class defines the interface that must be implemented
+for each type of file that spotcheck will support. A Checker is given a
+CheckRequest containing the path to a file and other info, and returns a
+CheckResult indicating whether it knew how to interpret the file, any errors
+it found in the file, and a thumbnail of the file. The Checker also extracts
+files if the file is an archive (e.g. a zip or tar).
+
+The CheckerRunner class recursively checks all the files in a given path
+(including files inside archives, if it's configured with a Checker that
+can extract the archive) using a given set of Checkers.
+"""
+from __future__ import annotations
+from dataclasses import dataclass, field
+from PIL import Image
 from pathlib import Path
-from os import PathLike
-import random
-import re
-from typing import List, Pattern, Tuple
-from spot_check_files.base import FileAccessor, FileInfo, FSFileAccessor,\
-    Inspector
-from spot_check_files.jsoninspector import JSONInspector
-from spot_check_files.tarinspector import ExtractingTarInspector,\
-    StreamingTarInspector
-from spot_check_files.xmlinspector import XMLInspector
-from spot_check_files.zipinspector import ExtractingZipInspector,\
-    StreamingZipInspector
+import platform
+from tempfile import TemporaryDirectory
+from typing import List, Union
 
 
-def default_inspectors(streaming=False):
-    inspectors = []
-    inspectors.append((r'.*\.json\Z', JSONInspector()))
-    inspectors.append((r'.*\.xml\Z', XMLInspector()))
-    tar_regex = r'.*\.(tar\.(gz|bz2|xz)|tgz|tbz|txz)\Z'
-    if streaming:
-        inspectors.append((r'.*\.zip\Z', StreamingZipInspector()))
-        inspectors.append((tar_regex, StreamingTarInspector()))
-    else:
-        inspectors.append((r'.*\.zip\Z', ExtractingZipInspector()))
-        inspectors.append((tar_regex, ExtractingTarInspector()))
-    return inspectors
+@dataclass
+class CheckRequest:
+    """Represents a file that should be checked.
+
+    Attributes:
+        realpath - path to (possibly temporary) location of file
+        tmpdir - a shared temporary directory
+        virtpath - logical path associated with the file. For example,
+                   if the file "foo/bar.txt" was extracted from "a.zip",
+                   this might be "a.zip/foo/bar.txt".
+        thumb - if True, a thumbnail should be generated
+    """
+    realpath: Path
+    tmpdir: Path
+    virtpath: Path
+    thumb: bool = False
+
+
+@dataclass
+class CheckResult:
+    """The result of a checking a file.
+    Attributes:
+        errors - any problems found with the file
+        extracted - if the file was an archive, the path to the directory
+                    containing its extracted contents. This should be a
+                    subdirectory of the tmpdir specified in the request
+        recognizer - a Checker will set this to itself if it's confident
+                     that the file was valid or invalid; if the file type
+                     is still unclear, this may be None
+        thumb - a thumbnail of the file
+    """
+    errors: List[Union[str, Exception]] = field(default_factory=list)
+    extracted: Path = None
+    thumb: Image = None
+    recognizer: Checker = None
 
 
 class Checker:
-    files: List[FileInfo]
-    num_thumbnails: int
-    thumbnail_files: List[FileInfo]
-    inspectors: List[Tuple[Pattern, Inspector]]
+    def check(self, req: CheckRequest) -> CheckResult:
+        """Validate, extract, and/or make a thumbnail of the specified file.
 
-    def __init__(self, *, num_thumbnails: int = 3,
-                 inspectors: List[Tuple[Pattern, Inspector]] = None):
-        self.files = []
-        self.num_thumbnails = num_thumbnails
-        self.thumbnail_files = []
-        self.inspectors = inspectors or default_inspectors()
+        Errors relating to a problem with the file should be caught and added
+        to the errors list of the result. Errors which may indicate a that the
+        checker itself is unable to operate on valid files can be propagated.
+        """
+        raise NotImplementedError()
 
-    def check_path(self, path: PathLike):
-        path = Path(path)
-        if path.is_file():
-            size = path.stat().st_size
-            info = FileInfo(pathseq=(str(path),), size=size)
-            self.check(info, FSFileAccessor(path))
-        elif path.is_dir():
-            for child in path.glob('**/*'):
-                if child.is_file():
-                    self.check_path(child)
-        else:
-            raise ValueError(f'no file or folder at path: {path}')
 
-    def check(self, info: FileInfo, accessor: FileAccessor):
-        self.files.append(info)
-        inspector = self.inspector(info)
-        if inspector:
-            info.inspector = inspector
-            tnindex = 0
-            if self.num_thumbnails:
-                if len(self.thumbnail_files) < self.num_thumbnails:
-                    tnindex = len(self.thumbnail_files)
-                else:
-                    tnindex = random.randrange(0, len(self.files))
-            thumbnail = tnindex < self.num_thumbnails
-            inspector.inspect(info, accessor,
-                              thumbnail=thumbnail, on_child=self.check)
-            if thumbnail and info.thumbnail:
-                if len(self.thumbnail_files) < self.num_thumbnails:
-                    self.thumbnail_files.append(info)
-                else:
-                    self.thumbnail_files[tnindex] = info
+@dataclass
+class FileSummary:
+    """Records metadata about a file, and the result of checking it.
 
-    def inspector(self, info: FileInfo):
-        for (pattern, inspector) in self.inspectors:
-            if re.match(pattern, info.pathseq[-1], re.IGNORECASE):
-                return inspector
-        return None
+    Attributes:
+        result - result from the first checker that recognized the file,
+                 or an empty result
+        size - size in bytes of the file
+        virtpath - the logical path to the file (for files inside an archive,
+                   this wil include the path to the archive)
+    """
+    size: int
+    virtpath: Path
+    result: CheckResult = field(default_factory=CheckResult)
+
+
+class CheckerRunner:
+    """This is the main entry point for spot-checking files.
+
+    What types of files will be checked, and how they will be recognized,
+    is determined by the checkers attribute. The CheckerRunner.default()
+    method will create an instance with a default set of checkers.
+
+    The check_path method should be called for each file or directory you
+    wish to check.
+
+    Attributes:
+        checkers - for each file, these will be applied in order until
+                    one recognizes the file
+    """
+    @classmethod
+    def default(cls):
+        """Returns an instance with hopefully-reasonable defaults.
+
+        Default checkers, in order:
+            1. FileNameChecker.default()
+            2. If on a Mac, QlChecker
+        """
+        from spot_check_files.filenames import FileNameChecker
+        checkers = [FileNameChecker.default()]
+        if platform.mac_ver()[0]:
+            from spot_check_files.quicklook import QLChecker
+            checkers.append(QLChecker())
+        return cls(checkers)
+
+    def __init__(self, checkers: List[Checker] = []):
+        self.checkers = list(checkers)
+
+    def check_path(self, path: Path, virtpath: Path = None,
+                   tmpdir: Path = None) -> List[FileSummary]:
+        """Runs checks against the file or directory at the given path."""
+        if not tmpdir:
+            with TemporaryDirectory() as tmpdir:
+                return self.check_path(path, virtpath, Path(tmpdir))
+        results = []
+        virtpath = virtpath or path
+        if path.is_dir():
+            for fpath in path.glob('**/*'):
+                if fpath.is_file():
+                    fvirtpath = virtpath.joinpath(fpath.relative_to(path))
+                    results.extend(self.check_path(fpath, fvirtpath, tmpdir))
+            return results
+        elif path.is_file():
+            summary = FileSummary(
+                virtpath=virtpath,
+                size=path.stat().st_size)
+            results.append(summary)
+            for checker in self.checkers:
+                req = CheckRequest(
+                    realpath=path, tmpdir=tmpdir, virtpath=virtpath,
+                    thumb=True)
+                res = checker.check(req)
+                if res.recognizer:
+                    summary.result = res
+                    if res.extracted:
+                        results.extend(
+                            self.check_path(res.extracted, virtpath, tmpdir))
+                    break
+        return results

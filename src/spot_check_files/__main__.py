@@ -1,5 +1,4 @@
-from spot_check_files import cli
-
+from spot_check_files.cli import main
 
 if __name__ == '__main__':
-    cli.main()
+    main()

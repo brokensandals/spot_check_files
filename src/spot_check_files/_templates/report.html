@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>spotcheck report</title>
+        <style>
+            body {
+                width: 600px;
+                margin-left: auto;
+                margin-right: auto;
+            }
+            table {
+                margin-left: auto;
+                margin-right: auto;
+                border-collapse: collapse;
+            }
+            tbody tr:hover {
+                background-color: #ffffa0;
+            }
+            th, td {
+                text-align: right;
+                padding-top: 0.25em;
+                padding-bottom: 0.25em;
+                padding-left: 3ex;
+            }
+            th:first-child, td:first-child {
+                text-align: left;
+                padding-left: 0;
+            }
+            h1 {
+                text-align: center;
+            }
+            .errfile {
+                margin-bottom: 1em;
+            }
+            .error {
+                background-color: #e2b3b3;
+                margin-bottom: 3px;
+                border-radius: 5px;
+                padding: 5px 10px;
+                font-weight: bold;
+            }
+            .thumbs ul {
+                list-style-type: none;
+                margin: 0;
+                padding: 0;
+                display: flex;
+                flex-direction: column;
+                flex-wrap: wrap;
+                height: {{ (((thumb_summaries|length)/3)|round(0, 'ceil')|int) * 200 }}px;
+                font-size: 0;
+                align-content: center;
+            }
+            .thumbs img {
+                border: 1px solid lightgray;
+                width: 198px;
+            }
+        </style>
+    </head>
+    <body>
+        <section class="stats">
+            <h1>File Statistics</h1>
+            <table>
+                <thead>
+                    <tr>
+                        <th></th>
+                        <th>count</th>
+                        <th>size</th>
+                        <th>%files</th>
+                        <th>%size</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for group in groups %}
+                        <tr>
+                            <td>{{ group.name }}</td>
+                            <td>{{ group.count }}</td>
+                            <td>{{ group.size }}</td>
+                            <td>{{ group.count_pct }}</td>
+                            <td>{{ group.size_pct }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </section>
+        {% if err_summaries %}
+            <section class="errors">
+                <h1>Errors</h1>
+                <ul>
+                    {% for summary in err_summaries %}
+                        <li class="errfile">
+                            {{ summary.virtpath }}
+                            <ul>
+                                {% for error in summary.result.errors %}
+                                    <li class="error">{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        </li>
+                    {% endfor %}
+                </ul>
+            </section>
+        {% endif %}
+        {% if thumb_summaries %}
+            <section class="thumbs">
+                <h1>Thumbnails</h1>
+                <ul>
+                    {% for summary in thumb_summaries %}
+                        <li><img title="thumbnail for {{ summary.virtpath }}"
+                                 src="{{ thumburl(summary) }}" /></li>
+                    {% endfor %}
+                </ul>
+            </section>
+        {% endif %}
+    </body>
+</html>

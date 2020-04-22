@@ -1,75 +1,140 @@
+"""Handles summarizing and formatting results. Main class is CheckReport."""
 import base64
+from io import BytesIO
 import os
+from PIL import Image
+from terminaltables import SingleTable
 from typing import List
-from spot_check_files.base import FileInfo
+from spot_check_files.checker import FileSummary
 
 
-def _total_size(fileinfos):
-    return sum(f.size for f in fileinfos)
-
-
-def _print_images(fileinfos):
+def _print_thumbs(summaries):
     try:
         from imgcat import imgcat
     except ImportError:
         return
 
-    for file in fileinfos:
-        print()
-        print(f'thumbnail for {file.pathseq}:')
-        imgcat(file.thumbnail)
+    while summaries:
+        # Combine images to show three per line in the output
+        group = [s.result.thumb for s in summaries[0:3]]
+        boxes = [i.getbbox() for i in group]
+        if any(boxes):
+            width = sum(b[2] - b[0] + 1 for b in boxes if b)
+            height = max(b[3] - b[1] + 1 for b in boxes if b)
+            img = Image.new('RGBA', (width, height))
+            x = 0
+            for i in range(len(group)):
+                if boxes[i] is None:
+                    continue
+                img.paste(group[i], (x, 0))
+                x += boxes[i][2] - boxes[i][0] + 1
+            imgcat(img)
+        summaries = summaries[3:]
 
 
-class Report:
-    def __init__(self, files: List[FileInfo],
-                 thumbnails: List[FileInfo]):
-        self.files = files
-        self.thumbnails = thumbnails
+class _GroupStats:
+    def __init__(self, name: str, summaries: List[FileSummary],
+                 comparison: List[FileSummary] = None):
+        self.name = name
+        self.count = len(summaries)
+        self.size = sum(s.size for s in summaries)
+        self.count_pct = ''
+        self.size_pct = ''
+        if comparison:
+            self.count_pct = '{:.0%}'.format(self.count / len(comparison))
+            self.size_pct = '{:.0%}'.format(
+                self.size / sum(s.size for s in comparison))
 
-        arch = [f for f in files if f.mere_container]
-        self.count_arch = len(arch)
-        self.size_arch = sum(f.size for f in arch)
-        nonarch = [f for f in files if not f.mere_container]
-        self.count_nonarch = len(nonarch)
-        self.size_nonarch = sum(f.size for f in nonarch)
-        rec = [f for f in nonarch if f.recognized]
-        self.count_rec = len(rec)
-        self.frac_rec = self.count_rec / self.count_nonarch
-        self.size_rec = sum(f.size for f in rec)
-        self.frac_size_rec = self.size_rec / self.size_nonarch
-        # TODO: will give messed up stats if f.problems and f.mere_container
-        #       really, those should be mutually exclusive
-        prob = [f for f in files if f.problems]
-        self.count_prob = len(prob)
-        self.frac_prob = self.count_prob / self.count_nonarch
-        self.size_prob = sum(f.size for f in prob)
-        self.frac_size_prob = self.size_prob / self.size_nonarch
-        self.count_thumb = len(thumbnails)
-        self.frac_thumb = self.count_thumb / self.count_nonarch
-        self.size_thumb = sum(f.size for f in thumbnails)
-        self.frac_size_thumb = self.size_thumb / self.size_nonarch
+
+class CheckReport:
+    """Formats and displays results from a CheckerRunner."""
+    def __init__(self, summaries: List[FileSummary]):
+        self.summaries = summaries
+        arch_summaries = [s for s in summaries
+                          if s.result.extracted
+                          and not s.result.errors]
+        leaf_summaries = [s for s in summaries
+                          if s.result.errors or not s.result.extracted]
+        self.err_summaries = [s for s in leaf_summaries if s.result.errors]
+        self.thumb_summaries = [s for s in leaf_summaries if s.result.thumb]
+        self.groups = [
+            _GroupStats('Archives (without errors)', arch_summaries),
+            _GroupStats('Files (excludes errorless archives)',
+                        leaf_summaries),
+            _GroupStats('Files with thumbnails', self.thumb_summaries,
+                        leaf_summaries),
+            _GroupStats('Files with ERRORS', self.err_summaries,
+                        leaf_summaries),
+        ]
+
+        by_rec = {}
+        unrec_by_ext = {}
+        for summary in leaf_summaries:
+            if summary.result.recognizer is None:
+                ext = summary.virtpath.suffix
+                if ext not in unrec_by_ext:
+                    unrec_by_ext[ext] = []
+                unrec_by_ext[ext].append(summary)
+            else:
+                rec = str(summary.result.recognizer)
+                if rec not in by_rec:
+                    by_rec[rec] = []
+                by_rec[rec].append(summary)
+
+        for rec in sorted(by_rec.keys()):
+            self.groups.append(_GroupStats(f'Recognized by {rec}',
+                                           by_rec[rec], leaf_summaries))
+
+        for ext in sorted(unrec_by_ext.keys()):
+            if not ext:
+                continue
+            self.groups.append(_GroupStats(
+                f'Unrecognized with extension {ext}',
+                unrec_by_ext[ext], leaf_summaries))
+        if '' in unrec_by_ext:
+            self.groups.append(_GroupStats(
+                'Other unrecognized', unrec_by_ext[''], leaf_summaries))
 
     def print(self):
-        print(f'Archives: {self.count_arch}')
-        print(f'Leaf files: {self.count_nonarch}, {self.size_nonarch} bytes')
-        print('Recognized {:.0%} of files, {:.0%} by size'
-              .format(self.frac_rec, self.frac_size_rec))
-        print('Made thumbnails of {:.0%} of files, {:.0%} by size'
-              .format(self.frac_thumb, self.frac_size_thumb))
+        """Prints the report to the terminal.
 
-        for file in self.files:
-            for problem in file.problems:
-                print(f'WARNING {file.pathseq}: {problem}')
-
+        If using iTerm2, thumbnails are displayed; otherwise, they are
+        not used.
+        """
         if os.environ.get('TERM_PROGRAM', None) == 'iTerm.app':
-            _print_images(self.thumbnails)
+            _print_thumbs(self.thumb_summaries)
 
-    def html(self):
+        for summary in self.err_summaries:
+            print(f'ERRORS for {summary.virtpath}')
+            for err in summary.result.errors:
+                print(f'\t{err}')
+            print()
+
+        stats = [('Group', 'Files', 'Size', '% Files', '% Size')]
+        stats.extend((g.name,
+                      g.count,
+                      g.size,
+                      g.count_pct,
+                      g.size_pct) for g in self.groups)
+        table = SingleTable(stats)
+        for i in range(1, 5):
+            table.justify_columns[i] = 'right'
+        print(table.table)
+
+    def html(self) -> str:
+        """Returns an HTML version of the report, as a string."""
         from jinja2 import Environment, PackageLoader, select_autoescape
+
+        def thumburl(summary):
+            data = BytesIO()
+            summary.result.thumb.save(data, 'png')
+            encdata = base64.b64encode(data.getvalue()).decode('utf-8')
+            return f'data:image/png;base64,{encdata}'
+
         env = Environment(
-            loader=PackageLoader('spot_check_files', 'templates'),
-            autoescape=select_autoescape(['html', 'xml']),
+            loader=PackageLoader('spot_check_files', '_templates'),
+            autoescape=select_autoescape(['html']),
             trim_blocks=True)
-        env.globals['b64encode'] = base64.b64encode
+        env.globals['thumburl'] = thumburl
         template = env.get_template('report.html')
         return template.render(vars(self))
