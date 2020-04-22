@@ -1,9 +1,10 @@
 # spot\_check\_files
 
-This is a tool to help validate the integrity of data backups/exports.
+This is a tool to help validate the integrity of a set of files, e.g. data backups/exports.
 
 - Checks recognized file types for errors, e.g. invalid json.
-- Selects some files at random to show you thumbnails of.
+- Generates thumbnails of files when possible.
+- Displays statistics about file types and unrecognized files.
 
 ## Usage
 
@@ -16,20 +17,27 @@ Install:
 Run:
 
 ```bash
-spot_check_files PATH
+spotcheck PATH
 ```
 
-This will output basic stats and any problems the tool detects in the given files/directories.
-If you're using iTerm2 on Mac, it will also show thumbnails of a few randomly-selected files.
+This will output basic stats and any errors the tool detects in the given files/directories.
+If you're using iTerm2 on Mac, it will also show thumbnails of files.
 
-The full list of options can be seen in the [doc folder](doc/).
+Alternatively, you can generate an HTML report:
+
+```bash
+spotcheck -H PATH > out.html
+```
+
+The full list of options can be seen in [here](doc/usage.txt) or by running `spotcheck --help`.
 
 This tool can also be used programmatically.
-The main entry point for the library is [spot_check_files.checker.Checker](src/spot_check_files/checker.py).
+The main entry point for the library is the `CheckerRunner` class in [spot_check_files.checker](src/spot_check_files/checker.py).
+You can add support for new file types by implementing the `Checker` class in that module.
 
 ## Supported file types
 
-File types are currently recognized only by file extension.
+The command-line tool currently relies entirely on file extension to determine file types.
 
 <table>
     <thead>
@@ -41,6 +49,7 @@ File types are currently recognized only by file extension.
     <tbody>
         <tr>
             <td>
+                Archive files:
                 <ul>
                     <li><code>.tar</code></li>
                     <li><code>.tar.bz2</code></li>
@@ -55,16 +64,53 @@ File types are currently recognized only by file extension.
             <td>Recursively checks all the files in the archive (including other archives)</td>
         </tr>
         <tr>
-            <td><code>.json</code></td>
-            <td>Checks that the json can be parsed</td>
+            <td>
+                CSV files:
+                <ul>
+                    <li><code>.csv</code></li>
+                    <li><code>.tsv</code></li>
+                </ul>
+            </td>
+            <td>Checks that the CSV dialect can be detected and read by Python, and builds a thumbnail</td>
         </tr>
         <tr>
-            <td><code>.xml</code></td>
-            <td>Checks that the xml can be parsed</td>
+            <td>
+                Image files:
+                <ul>
+                    <li><code>.bmp</code></li>
+                    <li><code>.gif</code></li>
+                    <li><code>.icns</code></li>
+                    <li><code>.ico</code></li>
+                    <li><code>.jpg</code></li>
+                    <li><code>.jpeg</code></li>
+                    <li><code>.png</code></li>
+                    <li><code>.tiff</code></li>
+                    <li><code>.webp</code></li>
+                </ul>
+            </td>
+            <td>Checks that the file can be loaded by the Python imaging library Pillow, and builds a thumbnail</td>
+        </tr>
+        <tr>
+            <td>JSON files: <code>.json</code></td>
+            <td>Checks that the json can be parsed, and builds a thumbnail of the pretty-printed json</td>
+        </tr>
+        <tr>
+            <td>
+                Text files:
+                <ul>
+                    <li><code>.md</code></li>
+                    <li><code>.txt</code></li>
+                </ul>
+            </td>
+            <td>Treating the file as plaintext, builds a thumbnail</td>
+        </tr>
+        <tr>
+            <td>XML files: <code>.xml</code></td>
+            <td>Checks that the xml can be parsed, and builds a thumbnail of the pretty-printed xml</td>
         </tr>
         <tr>
             <td>anything supported by OS X Quick Look (HTML, Office docs, ...)</td>
-            <td>OS X ONLY: generates thumbnails using Quick Look. This greatly increases the number of supported file types. However, it's slow. See the <code>-q</code> command line option if you wish to partially or fully disable it.</td>
+            <td>OS X ONLY: generates thumbnails using Quick Look. This greatly increases the number of supported file types. However, it's slow.</td>
         </tr>
     </tbody>
 </table>

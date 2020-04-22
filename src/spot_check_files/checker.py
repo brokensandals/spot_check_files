@@ -1,3 +1,16 @@
+"""Defines the API for file checkers and a helper class for running them.
+
+The Checker abstract class defines the interface that must be implemented
+for each type of file that spotcheck will support. A Checker is given a
+CheckRequest containing the path to a file and other info, and returns a
+CheckResult indicating whether it knew how to interpret the file, any errors
+it found in the file, and a thumbnail of the file. The Checker also extracts
+files if the file is an archive (e.g. a zip or tar).
+
+The CheckerRunner class recursively checks all the files in a given path
+(including files inside archives, if it's configured with a Checker that
+can extract the archive) using a given set of Checkers.
+"""
 from __future__ import annotations
 from dataclasses import dataclass, field
 from PIL import Image

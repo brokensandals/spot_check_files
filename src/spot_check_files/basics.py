@@ -1,3 +1,4 @@
+"""Implementations of Checker for various basic file types."""
 import csv
 from importlib import resources
 import json

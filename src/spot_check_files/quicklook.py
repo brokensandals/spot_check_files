@@ -1,3 +1,4 @@
+"""Implements a Checker that makes use of OS X's QuickLook system."""
 from pathlib import Path
 from PIL import Image
 import shutil

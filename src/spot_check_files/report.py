@@ -1,3 +1,4 @@
+"""Handles summarizing and formatting results. Main class is CheckReport."""
 import base64
 from io import BytesIO
 import os
@@ -46,6 +47,7 @@ class _GroupStats:
 
 
 class CheckReport:
+    """Formats and displays results from a CheckerRunner."""
     def __init__(self, summaries: List[FileSummary]):
         self.summaries = summaries
         arch_summaries = [s for s in summaries
@@ -94,6 +96,11 @@ class CheckReport:
                 'Other unrecognized', unrec_by_ext[''], leaf_summaries))
 
     def print(self):
+        """Prints the report to the terminal.
+
+        If using iTerm2, thumbnails are displayed; otherwise, they are
+        not used.
+        """
         if os.environ.get('TERM_PROGRAM', None) == 'iTerm.app':
             _print_thumbs(self.thumb_summaries)
 
@@ -114,7 +121,8 @@ class CheckReport:
             table.justify_columns[i] = 'right'
         print(table.table)
 
-    def html(self):
+    def html(self) -> str:
+        """Returns an HTML version of the report, as a string."""
         from jinja2 import Environment, PackageLoader, select_autoescape
 
         def thumburl(summary):

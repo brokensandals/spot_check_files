@@ -1,3 +1,4 @@
+"""Implementations of Checker for zip and tar files."""
 from pathlib import Path
 import tarfile
 import tempfile

@@ -1,3 +1,4 @@
+"""Logic for selecting a Checker based on filenames (e.g. file extension)."""
 from __future__ import annotations
 import fnmatch
 from typing import List, Tuple
