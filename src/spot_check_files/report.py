@@ -59,7 +59,7 @@ class CheckReport:
                         leaf_summaries),
             _GroupStats('Files with thumbnails', self.png_summaries,
                         leaf_summaries),
-            _GroupStats('Files with errors', self.err_summaries,
+            _GroupStats('Files with ERRORS', self.err_summaries,
                         leaf_summaries),
         ]
 
@@ -68,10 +68,9 @@ class CheckReport:
         for summary in leaf_summaries:
             if summary.result.recognizer is None:
                 ext = summary.virtpath.suffix
-                if ext:
-                    if ext not in unrec_by_ext:
-                        unrec_by_ext[ext] = []
-                    unrec_by_ext[ext].append(summary)
+                if ext not in unrec_by_ext:
+                    unrec_by_ext[ext] = []
+                unrec_by_ext[ext].append(summary)
             else:
                 rec = str(summary.result.recognizer)
                 if rec not in by_rec:
@@ -86,11 +85,11 @@ class CheckReport:
             if not ext:
                 continue
             self.groups.append(_GroupStats(
-                f'Unrecognized files with extension {ext}',
+                f'Unrecognized with extension {ext}',
                 unrec_by_ext[ext], leaf_summaries))
         if '' in unrec_by_ext:
             self.groups.append(_GroupStats(
-                'Other unrecognized files', unrec_by_ext[''], leaf_summaries))
+                'Other unrecognized', unrec_by_ext[''], leaf_summaries))
 
     def print(self):
         if os.environ.get('TERM_PROGRAM', None) == 'iTerm.app':
