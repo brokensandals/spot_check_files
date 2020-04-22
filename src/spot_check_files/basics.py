@@ -1,6 +1,6 @@
 import csv
 from importlib import resources
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFont, UnidentifiedImageError
 from typing import List
 from spot_check_files import _monoid_font
 from spot_check_files.checker import Checker, CheckRequest, CheckResult
@@ -75,6 +75,26 @@ class CSVChecker(Checker):
                 if req.thumb:
                     result.thumb = table_thumb(rows)
         except csv.Error as e:
+            result.errors.append(e)
+        return result
+
+
+class ImageChecker(Checker):
+    """Checks an image by loading it with PIL.
+    """
+    def __str__(self):
+        return 'ImageChecker'
+
+    def check(self, req: CheckRequest) -> CheckResult:
+        result = CheckResult()
+        try:
+            with Image.open(req.realpath, 'r') as img:
+                img.load()
+                result.recognizer = self
+                if req.thumb:
+                    img.thumbnail((300, 300))
+                    result.thumb = img
+        except UnidentifiedImageError as e:
             result.errors.append(e)
         return result
 

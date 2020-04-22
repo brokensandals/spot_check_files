@@ -1,7 +1,7 @@
 from pathlib import Path
-from PIL import Image
+from PIL import Image, UnidentifiedImageError
 from tempfile import TemporaryDirectory
-from spot_check_files.basics import CSVChecker, PlaintextChecker
+from spot_check_files.basics import CSVChecker, ImageChecker, PlaintextChecker
 from spot_check_files.checker import CheckRequest
 
 
@@ -62,6 +62,40 @@ def test_tsv():
         assert res.errors == []
         with Image.open(str(Path('tests').joinpath('csv.png'))) as img:
             assert res.thumb.tobytes() == img.tobytes()
+
+
+def test_image_valid():
+    with TemporaryDirectory() as td:
+        td = Path(td)
+        req = CheckRequest(
+            realpath=Path('tests').joinpath('testimage.jpg'),
+            tmpdir=td,
+            virtpath=Path('irrelevant'))
+        res = ImageChecker().check(req)
+        assert isinstance(res.recognizer, ImageChecker)
+        assert res.errors == []
+        assert res.thumb is None
+
+        req.thumb = True
+        res = ImageChecker().check(req)
+        assert res.errors == []
+        with Image.open(Path('tests').joinpath('image.png')) as img:
+            assert res.thumb.tobytes() == img.tobytes()
+
+
+def test_image_invalid():
+    with TemporaryDirectory() as td:
+        td = Path(td)
+        req = CheckRequest(
+            realpath=td.joinpath('test.jpg'),
+            tmpdir=td,
+            virtpath=Path('irrelevant'))
+        req.realpath.write_text('garbage')
+        res = ImageChecker().check(req)
+        assert res.recognizer is None
+        assert len(res.errors) == 1
+        assert isinstance(res.errors[0], UnidentifiedImageError)
+        assert res.thumb is None
 
 
 def test_plaintext_valid():

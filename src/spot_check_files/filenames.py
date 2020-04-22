@@ -2,7 +2,7 @@ from __future__ import annotations
 import fnmatch
 from typing import List, Tuple
 from spot_check_files.archives import TarChecker, ZipChecker
-from spot_check_files.basics import CSVChecker, PlaintextChecker
+from spot_check_files.basics import CSVChecker, ImageChecker, PlaintextChecker
 from spot_check_files.checker import Checker, CheckResult, CheckRequest
 
 
@@ -25,6 +25,7 @@ class FileNameChecker(Checker):
         ctar = TarChecker()
         checkers = [
             ('*.csv', CSVChecker()),
+            ('*.md', PlaintextChecker()),
             ('*.tar', ctar),
             ('*.tar.bz2', ctar),
             ('*.tar.gz', ctar),
@@ -35,6 +36,23 @@ class FileNameChecker(Checker):
             ('*.txz', ctar),
             ('*.zip', ZipChecker()),
         ]
+
+        # I haven't tested most of these, they're just some of the ones
+        # that Pillow supports that seem most likely to be of use to me
+        img_exts = [
+            'bmp',
+            'gif',
+            'icns',
+            'ico',
+            'jpg',
+            'jpeg',
+            'png',
+            'tiff',
+            'webp',
+        ]
+        cimg = ImageChecker()
+        checkers.extend((f'*.{ext}', cimg) for ext in img_exts)
+
         return cls(checkers)
 
     def __init__(self, checkers: List[Tuple[str, Checker]] = []):
