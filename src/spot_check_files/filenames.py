@@ -3,7 +3,7 @@ import fnmatch
 from typing import List, Tuple
 from spot_check_files.archives import TarChecker, ZipChecker
 from spot_check_files.basics import CSVChecker, ImageChecker,\
-    JSONChecker, PlaintextChecker
+    JSONChecker, PlaintextChecker, XMLChecker
 from spot_check_files.checker import Checker, CheckResult, CheckRequest
 
 
@@ -36,6 +36,7 @@ class FileNameChecker(Checker):
             ('*.tgz', ctar),
             ('*.txt', PlaintextChecker()),
             ('*.txz', ctar),
+            ('*.xml', XMLChecker()),
             ('*.zip', ZipChecker()),
         ]
 

@@ -3,6 +3,7 @@ from importlib import resources
 import json
 from PIL import Image, ImageDraw, ImageFont, UnidentifiedImageError
 from typing import List
+from xml.dom import minidom
 from spot_check_files import _monoid_font
 from spot_check_files.checker import Checker, CheckRequest, CheckResult
 
@@ -116,13 +117,14 @@ class JSONChecker(Checker):
 
     def check(self, req: CheckRequest) -> CheckResult:
         result = CheckResult()
+        parsed = None
         with req.realpath.open('r') as file:
             try:
                 parsed = json.load(file)
                 result.recognizer = self
             except json.JSONDecodeError as e:
                 result.errors.append(e)
-        if req.thumb:
+        if req.thumb and parsed is not None:
             pretty = json.dumps(parsed, indent=2)
             # Don't send an excessive amount of text to Pillow
             lines = [s[0:100] for s in pretty.splitlines()[0:100]]
@@ -155,4 +157,28 @@ class PlaintextChecker(Checker):
                 result.thumb = text_thumb(''.join(lines))
         except ValueError as e:
             result.errors.append(e)
+        return result
+
+
+class XMLChecker(Checker):
+    """Checks that a file is valid XML.
+
+    If the file cannot be parsed, it will not be marked as recognized.
+    """
+    def __str__(self):
+        return 'XMLChecker'
+
+    def check(self, req: CheckRequest) -> CheckResult:
+        result = CheckResult()
+        parsed = None
+        try:
+            parsed = minidom.parse(str(req.realpath))
+            result.recognizer = self
+        except Exception as e:
+            result.errors.append(e)
+        if req.thumb and parsed is not None:
+            pretty = parsed.toprettyxml(indent='  ')
+            # Don't send an excessive amount of text to Pillow
+            lines = [s[0:100] for s in pretty.splitlines()[0:100]]
+            result.thumb = text_thumb('\n'.join(lines))
         return result

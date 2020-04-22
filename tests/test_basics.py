@@ -3,7 +3,7 @@ from pathlib import Path
 from PIL import Image, UnidentifiedImageError
 from tempfile import TemporaryDirectory
 from spot_check_files.basics import CSVChecker, ImageChecker,\
-    JSONChecker, PlaintextChecker
+    JSONChecker, PlaintextChecker, XMLChecker
 from spot_check_files.checker import CheckRequest
 
 
@@ -22,6 +22,11 @@ _TEST_JSON = """{"hello": {
     "This is a multiline string.\\nHuzzah."]
 }
 }"""
+
+
+_TEST_XML = """<root><one>Hello there
+</one><one>How are you?</one><two>I am
+not dead (at time of writing).</two></root>"""
 
 
 _IMGDIR = Path('tmp')
@@ -191,3 +196,38 @@ def test_plaintext_encoding_error():
         assert len(res.errors) == 1
         assert isinstance(res.errors[0], UnicodeDecodeError)
         assert res.thumb is None
+
+
+def test_xml_valid():
+    with TemporaryDirectory() as td:
+        td = Path(td)
+        req = CheckRequest(
+            realpath=td.joinpath('test.xml'),
+            tmpdir=td,
+            virtpath=Path('irrelevant'))
+        req.realpath.write_text(_TEST_XML)
+        res = XMLChecker().check(req)
+        assert isinstance(res.recognizer, XMLChecker)
+        assert res.errors == []
+        assert res.thumb is None
+
+        req.thumb = True
+        res = XMLChecker().check(req)
+        assert res.errors == []
+        res.thumb.save(str(Path(_IMGDIR).joinpath('xml.png')))
+        with Image.open(Path('tests').joinpath('xml.png')) as img:
+            assert res.thumb.tobytes() == img.tobytes()
+
+
+def test_xml_invalid():
+    with TemporaryDirectory() as td:
+        td = Path(td)
+        req = CheckRequest(
+            realpath=td.joinpath('test.xml'),
+            tmpdir=td,
+            virtpath=Path('irrelevant'))
+        req.realpath.write_text('<root>garbage')
+        res = XMLChecker().check(req)
+        assert res.recognizer is None
+        assert len(res.errors) == 1
+        assert 'no element found' in str(res.errors[0])
