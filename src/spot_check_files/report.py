@@ -97,7 +97,7 @@ class CheckReport:
             _print_thumbs(self.png_summaries)
 
         for summary in self.err_summaries:
-            print(f'WARNINGS for {summary.virtpath}')
+            print(f'ERRORS for {summary.virtpath}')
             for err in summary.result.errors:
                 print(f'\t{err}')
             print()
