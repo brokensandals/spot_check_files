@@ -192,4 +192,3 @@ def test_thumbs(capsys):
     assert re.search(r'^.*thumbnails.*\b68%.*$', cap.out, re.MULTILINE)
     html = report.html()
     _HTMLDIR.joinpath('thumbs.html').write_text(html)
-

@@ -1,7 +1,8 @@
-usage: spotcheck [-h] path [path ...]
+usage: spotcheck [-h] [-H] path [path ...]
 
 positional arguments:
   path        file or folders to check
 
 optional arguments:
   -h, --help  show this help message and exit
+  -H, --html  output HTML

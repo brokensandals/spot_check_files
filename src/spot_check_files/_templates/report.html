@@ -47,10 +47,12 @@
                 flex-direction: column;
                 flex-wrap: wrap;
                 height: {{ (((thumb_summaries|length)/3)|round(0, 'ceil')|int) * 200 }}px;
+                font-size: 0;
+                align-content: center;
             }
             .thumbs img {
                 border: 1px solid lightgray;
-                width: 200px;
+                width: 198px;
             }
         </style>
     </head>
