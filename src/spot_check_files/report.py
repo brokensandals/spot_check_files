@@ -55,12 +55,18 @@ class CheckReport:
                           and not s.result.errors]
         leaf_summaries = [s for s in summaries
                           if s.result.errors or not s.result.extracted]
+        skip_summaries = [s for s in leaf_summaries if s.result.skipped]
+        # If we ever get something that was extracted then marked as skipped,
+        # a Checker is misusing the Checker API.
+        # TODO: enforce this better, somewhere else
+        assert not [s for s in arch_summaries if s.result.skipped]
         self.err_summaries = [s for s in leaf_summaries if s.result.errors]
         self.thumb_summaries = [s for s in leaf_summaries if s.result.thumb]
         self.groups = [
             _GroupStats('Archives (without errors)', arch_summaries),
             _GroupStats('Files (excludes errorless archives)',
                         leaf_summaries),
+            _GroupStats('Skipped files', skip_summaries, leaf_summaries),
             _GroupStats('Files with thumbnails', self.thumb_summaries,
                         leaf_summaries),
             _GroupStats('Files with ERRORS', self.err_summaries,

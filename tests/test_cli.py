@@ -59,3 +59,18 @@ def test_happy_path(capsys):
         Path('doc').joinpath('sample-out.txt').write_text(text)
         Path('doc').joinpath('sample-out.html').write_text(html)
         zp.rename(_TMPDIR.joinpath('test.zip'))
+
+
+def test_skip(capsys):
+    with TemporaryDirectory() as td:
+        zp = Path(td).joinpath('test.zip')
+        with ZipFile(zp, 'w') as zf:
+            zf.writestr('yes.txt', '1')
+            zf.writestr('no.txt', 'one')
+            zf.writestr('bad.json', '{')
+        assert cli.main([td, '-s', 'yes.txt',
+                         '-s', str(zp.joinpath('no*')),
+                         '-s', '*.json']) == 0
+        cap = capsys.readouterr()
+        assert re.search(r'^.*Skipped files.*\b67%.*\b80%.*$',
+                         cap.out, re.MULTILINE)

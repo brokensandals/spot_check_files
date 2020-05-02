@@ -17,6 +17,8 @@ class FileNameChecker(Checker):
     The virtpath attribute of the CheckRequest is used.
 
     Attributes:
+        blacklist - list of filename patterns (as specified in fnmatch
+                    module) to mark as skipped
         checkers - list of tuples mapping filename pattern
                    (as specified in fnmatch module) to Checker
     """
@@ -67,12 +69,19 @@ class FileNameChecker(Checker):
         #      would print some way of distinguishing instances, though.
         return 'FileNameChecker'
 
-    def __init__(self, checkers: List[Tuple[str, Checker]] = []):
+    def __init__(self, checkers: List[Tuple[str, Checker]] = [],
+                 blacklist=[]):
+        self.blacklist = list(blacklist)
         self.checkers = list(checkers)
 
     def check(self, req: CheckRequest) -> CheckResult:
+        vpstr = str(req.virtpath)
+        for pattern in self.blacklist:
+            if fnmatch.fnmatch(vpstr, pattern):
+                return CheckResult(recognizer=self,
+                                   skipped=True)
         for (pattern, checker) in self.checkers:
-            if fnmatch.fnmatch(str(req.virtpath), pattern):
+            if fnmatch.fnmatch(vpstr, pattern):
                 result = checker.check(req)
                 if result.recognizer is None:
                     result.recognizer = self

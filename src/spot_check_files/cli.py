@@ -3,6 +3,7 @@ import argparse
 from pathlib import Path
 from typing import List
 from spot_check_files.checker import CheckerRunner
+from spot_check_files.filenames import FileNameChecker
 from spot_check_files.report import CheckReport
 
 
@@ -19,8 +20,15 @@ def main(args: List[str] = None) -> int:
     parser.add_argument('path', nargs='+', help='file or folders to check')
     parser.add_argument('-H', '--html', action='store_true', default=False,
                         help='output HTML')
+    parser.add_argument('-s', '--skip', action='append', default=[],
+                        help='patterns of paths to skip'
+                        ' (see python fnmatch module for pattern format).'
+                        ' These can be paths within archives, e.g.'
+                        ' "test.zip/foo.png"')
     args = parser.parse_args(args)
     runner = CheckerRunner.default()
+    next(c for c in runner.checkers if isinstance(c, FileNameChecker))\
+        .blacklist.extend(args.skip)
     summaries = []
     for path in args.path:
         summaries.extend(runner.check_path(Path(path)))

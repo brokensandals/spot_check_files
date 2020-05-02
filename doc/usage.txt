@@ -1,8 +1,11 @@
-usage: spotcheck [-h] [-H] path [path ...]
+usage: spotcheck [-h] [-H] [-s SKIP] path [path ...]
 
 positional arguments:
-  path        file or folders to check
+  path                  file or folders to check
 
 optional arguments:
-  -h, --help  show this help message and exit
-  -H, --html  output HTML
+  -h, --help            show this help message and exit
+  -H, --html            output HTML
+  -s SKIP, --skip SKIP  patterns of paths to skip (see python fnmatch module
+                        for pattern format). These can be paths within
+                        archives, e.g. "test.zip/foo.png"

@@ -2,6 +2,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from zipfile import ZipFile
 from spot_check_files.archives import ZipChecker
+from spot_check_files.basics import PlaintextChecker
 from spot_check_files.checker import CheckRequest
 from spot_check_files.filenames import FileNameChecker
 
@@ -50,3 +51,25 @@ def test_match():
         assert isinstance(res.recognizer, ZipChecker)
         assert res.errors == []
         assert res.extracted
+
+
+def test_blacklist():
+    with TemporaryDirectory() as tmpdir:
+        tmpdir = Path(tmpdir)
+        path = tmpdir.joinpath('test')
+        path.write_text('hello')
+        req = CheckRequest(
+            tmpdir=tmpdir,
+            realpath=path,
+            virtpath='test.zip/yes.txt')
+        checker = FileNameChecker.default()
+        checker.blacklist.append('test.zip/no.*')
+        res = checker.check(req)
+        assert isinstance(res.recognizer, PlaintextChecker)
+        assert res.errors == []
+        assert not res.skipped
+        req.virtpath = 'test.zip/no.txt'
+        res = checker.check(req)
+        assert res.recognizer is checker
+        assert res.errors == []
+        assert res.skipped

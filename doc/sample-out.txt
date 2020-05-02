@@ -7,6 +7,7 @@ ERRORS for test.zip/test.xml
 +-------------------------------------+-------+--------+---------+--------+
 | Archives (without errors)           |     1 | 571211 |         |        |
 | Files (excludes errorless archives) |     4 | 570789 |         |        |
+| Skipped files                       |     0 |      0 |      0% |     0% |
 | Files with thumbnails               |     3 | 462818 |     75% |    81% |
 | Files with ERRORS                   |     1 | 107971 |     25% |    19% |
 | Recognized by CSVChecker            |     1 |    349 |     25% |     0% |

@@ -4,6 +4,7 @@ import re
 from spot_check_files.archives import ZipChecker
 from spot_check_files.basics import CSVChecker, ImageChecker, PlaintextChecker
 from spot_check_files.checker import CheckResult, FileSummary
+from spot_check_files.filenames import FileNameChecker
 from spot_check_files.quicklook import QLChecker
 from spot_check_files.report import CheckReport
 
@@ -153,6 +154,26 @@ def test_recognition_stats(capsys):
     html = report.html()
     _HTMLDIR.joinpath('recognition_stats.html').write_text(html)
 
+
+def test_skipped(capsys):
+    s1 = FileSummary(size=15, virtpath=Path('a.txt'),
+                     result=CheckResult(recognizer=FileNameChecker(),
+                                        skipped=True))
+    s2 = FileSummary(size=23, virtpath=Path('b.csv'),
+                     result=CheckResult(recognizer=CSVChecker()))
+    report = CheckReport([s1, s2])
+    groups = [g for g in report.groups if g.name == 'Skipped files']
+    assert len(groups) == 1
+    assert groups[0].count == 1
+    assert groups[0].count_pct == '50%'
+    assert groups[0].size == 15
+    assert groups[0].size_pct == '39%'
+    report.print()
+    cap = capsys.readouterr()
+    assert re.search(r'^.*Skipped files.*\b39%.*$',
+                     cap.out, re.MULTILINE)
+    html = report.html()
+    _HTMLDIR.joinpath('skipped.html').write_text(html)
 
 def test_thumbs(capsys):
     s1 = FileSummary(

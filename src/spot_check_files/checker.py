@@ -49,12 +49,15 @@ class CheckResult:
         recognizer - a Checker will set this to itself if it's confident
                      that the file was valid or invalid; if the file type
                      is still unclear, this may be None
+        skipped - if True, the Checker decided this file should not be
+                  checked. recognizer should always be set when this is True.
         thumb - a thumbnail of the file
     """
     errors: List[Union[str, Exception]] = field(default_factory=list)
     extracted: Path = None
     thumb: Image = None
     recognizer: Checker = None
+    skipped: bool = False
 
 
 class Checker:
